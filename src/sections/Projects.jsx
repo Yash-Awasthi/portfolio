@@ -17,6 +17,7 @@ const PROJECTS = [
     desc: 'Autonomous pipeline scraping 11 financial sources (Bloomberg, Reuters, FT) with TLS fingerprinting at >95% success rate. Hybrid AI + keyword scoring, sub-second Telegram alerts.',
     tags: ['Python', 'TypeScript', 'Cloudflare Workers', 'WebSockets', 'Redis'],
     github: 'https://github.com/Yash-Awasthi/fin-scrape',
+    live: 'https://winfin.pages.dev',
     accent: '#0891B2',
     bg: 'linear-gradient(135deg, #ECFEFF 0%, #CFFAFE 100%)',
     icon: '📊',

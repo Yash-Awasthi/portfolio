@@ -24,6 +24,7 @@ const EVENTS = [
     desc: 'Aggregated 11 financial sources (Bloomberg, Reuters, FT) using TLS fingerprinting to bypass anti-bot systems at a >95% success rate.',
     more: 'Hybrid AI + keyword-scoring pipeline with a 200+ keyword lexicon. Real-time React dashboard with WebSocket streaming, Workers AI analysis, and Telegram alerts with sub-1s latency. Fully deployed and operational.',
     color: '#D97706', bg: '#FEF3E6',
+    live: 'https://winfin.pages.dev',
     tag: 'Live',
   },
   {
@@ -34,7 +35,7 @@ const EVENTS = [
     more: 'Drivers stream native SSE/NDJSON with no buffering; 3-category failover classifier covers 30+ error patterns. pgvector memory with IVFFlat ANN indexing and BM25+RRF hybrid search. Sandboxed code execution across 8 languages via Piston API. API deployed on Render, UI on Vercel.',
     color: 'var(--accent)', bg: 'var(--accent-light)',
     github: 'https://github.com/Yash-Awasthi/Nexus',
-    live: 'https://nexus.example.com',
+    live: 'https://nexus-api-three-kappa.vercel.app',
   },
   {
     year: '2026',
