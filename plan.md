@@ -20,14 +20,18 @@ vite all look wired up.
 
 ## next step for real feature work
 
-1. write readme. cover install, dev, build command. five minute job, big payoff for anyone
-   else touching repo.
+1. ~~write readme. cover install, dev, build command.~~ done, see README.md.
 2. pick one style approach and stick with it. either move inline style in Contact.jsx (and
    check other section) to tailwind class, or drop tailwind if not gonna use it consistent.
 3. add at least one smoke test or build check in CI so broken build get caught before merge.
-4. self-host resume PDF in public/ instead of drive link. remove dependency on external drive
-   permission staying open.
-5. pull shared constant (email, social handle, links) into one file, import where needed.
+4. resume still point to google drive. no PDF found anywhere in repo or repo/assets to
+   self-host. need the actual resume PDF file from the user, dropped into repo/assets or
+   public/, before this item can move. once file in hand: put it in public/resume.pdf, point
+   RESUME_URL in src/constants/links.js at it instead of drive link.
+5. ~~pull shared constant (email, social handle, links) into one file, import where needed.~~
+   done, see src/constants/links.js. wired into Contact.jsx, Hero.jsx, Nav.jsx, BottomDock.jsx,
+   Projects.jsx. per-project github repo link in Journey.jsx/Projects.jsx left alone, that is
+   project data not site-wide constant.
 
 ## branch and push note
 
