@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SOCIAL } from '../constants/links';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -52,7 +53,7 @@ export default function Nav() {
             </button>
           ))}
           <a
-            href="https://github.com/Yash-Awasthi"
+            href={SOCIAL.github}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
@@ -89,7 +90,7 @@ export default function Nav() {
             </button>
           ))}
           <a
-            href="https://github.com/Yash-Awasthi"
+            href={SOCIAL.github}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 text-sm font-mono text-gray-400 hover:text-white py-1"
