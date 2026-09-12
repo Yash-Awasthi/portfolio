@@ -17,7 +17,7 @@ function useClock() {
 }
 
 const CHIPS = [
-  { label: 'NIT Raipur · CPI 9.26', bg: 'var(--green-light)', color: '#15803D' },
+  { label: 'NIT Raipur · CPI 9.26', bg: 'var(--green-light)', color: 'var(--green-ink)' },
 ];
 
 export default function Hero() {
@@ -35,10 +35,10 @@ export default function Hero() {
           <span>Raipur, India</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-             style={{ background: 'var(--green-light)', border: '1px solid #BBF7D0' }}>
+             style={{ background: 'var(--green-light)', border: '1px solid var(--green-ring)' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', display: 'inline-block',
                          animation: 'blink 2s ease-in-out infinite' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#15803D' }}>Open to Internship</span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--green-ink)' }}>Open to Internship</span>
         </div>
       </div>
 

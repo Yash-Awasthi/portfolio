@@ -7,7 +7,7 @@ const EVENTS = [
     sub: 'B.Tech CSE · 2024–2028',
     desc: 'Placed in the top percentile from the outset. Focused on algorithms, systems programming, and competitive problem solving.',
     more: '500+ problems solved across LeetCode, CodeChef (3-star, max rating 1626) and Codeforces. Built strong foundations in algorithms, operating systems, computer networks, and compilers within the first year.',
-    color: '#15803D', bg: 'var(--green-light)',
+    color: 'var(--green-ink)', bg: 'var(--green-light)',
   },
   {
     year: 'May – Jul 2025',
@@ -119,15 +119,16 @@ export default function Journey() {
               {ev.desc}
             </p>
 
-            {expanded === i && (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.7,
-                          marginLeft: 20, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                {ev.more}
-              </p>
-            )}
+            <p id={`journey-more-${i}`} hidden={expanded !== i}
+               style={{ color: 'var(--text-muted)', fontSize: 13, lineHeight: 1.7,
+                        marginLeft: 20, marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+              {ev.more}
+            </p>
 
             <button
               onClick={() => setExpanded(expanded === i ? null : i)}
+              aria-expanded={expanded === i}
+              aria-controls={`journey-more-${i}`}
               style={{ marginLeft: 20, marginTop: 8, background: 'none', border: 'none', padding: 0,
                        fontSize: 12, fontWeight: 600, color: ev.color,
                        display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}

@@ -48,7 +48,7 @@ export default function App() {
                              <Skills />
       <section id="projects"><Projects /> </section>
       <section id="journey"> <Journey />  </section>
-      <section id="contact"> <Contact />  </section>
+                             <Contact />
 
       {/* Dock */}
       <BottomDock active={active} />

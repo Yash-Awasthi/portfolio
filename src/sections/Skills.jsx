@@ -31,7 +31,7 @@ const CATEGORIES = [
   },
   {
     label: 'Infrastructure',
-    color: '#15803D',
+    color: 'var(--green-ink)',
     bg: 'var(--green-light)',
     skills: ['Docker', 'GitHub Actions', 'Vercel', 'Render', 'Cloudflare Workers'],
   },

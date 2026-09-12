@@ -1,6 +1,5 @@
 /**
- * ThreeEffects — applies 3D visual effects to portfolio sections.
- * Uses the three_effects.ts library for particle systems and animations.
+ * ThreeEffects — floating particle drift behind a section.
  */
 import { useEffect, useRef } from 'react';
 

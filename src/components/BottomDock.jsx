@@ -66,7 +66,7 @@ export default function BottomDock({ active }) {
   };
 
   return (
-    <div className="dock">
+    <nav className="dock" aria-label="Section navigation">
       {ITEMS.map((item) => {
         const isActive = item.id === active;
         return item.href ? (
@@ -104,6 +104,6 @@ export default function BottomDock({ active }) {
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }
