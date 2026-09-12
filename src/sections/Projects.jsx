@@ -57,7 +57,7 @@ function ProjectCard({ p, index }) {
             {p.highlight}
           </span>
         )}
-        <div className="rounded-2xl flex items-center justify-center flex-shrink-0 float-b"
+        <div className="rounded-2xl flex items-center justify-center flex-shrink-0"
              style={{ width: 60, height: 60, background: '#fff', fontSize: 28, boxShadow: '0 4px 16px rgba(0,0,0,0.10)' }}>
           {p.icon}
         </div>

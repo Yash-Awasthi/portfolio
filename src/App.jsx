@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ParticleBackground from './components/ParticleBackground';
 import Hero from './sections/Hero';
 import About from './sections/About';
 import Skills from './sections/Skills';
@@ -40,6 +41,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <ParticleBackground />
       {/* Sections */}
       <section id="home">    <Hero />     </section>
       <section id="about">   <About />    </section>

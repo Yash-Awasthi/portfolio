@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { MAILTO } from '../constants/links';
 
+function formatTime() {
+  return new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
 function useClock() {
-  const [time, setTime] = useState('');
+  // The first reading is part of the initial state, so the effect only has to
+  // start the interval and does not set state during mount.
+  const [time, setTime] = useState(formatTime);
   useEffect(() => {
-    const fmt = () => new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    setTime(fmt());
-    const t = setInterval(() => setTime(fmt()), 1000);
+    const t = setInterval(() => setTime(formatTime()), 1000);
     return () => clearInterval(t);
   }, []);
   return time;

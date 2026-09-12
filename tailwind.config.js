@@ -1,11 +1,28 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'media',
   theme: {
     extend: {
       colors: {
-        gold: '#FFD700',
-        'gold-dim': '#B8860B',
+        background: 'var(--bg)',
+        foreground: 'var(--text)',
+        surface: { DEFAULT: 'var(--surface)', 2: 'var(--surface-2)' },
+        border: { DEFAULT: 'var(--border)', strong: 'var(--border-strong)' },
+        muted: { DEFAULT: 'var(--text-muted)', subtle: 'var(--text-subtle)' },
+        accent: { DEFAULT: 'var(--accent)', light: 'var(--accent-light)' },
+        warm: { DEFAULT: 'var(--warm)', light: 'var(--warm-light)' },
+        success: { DEFAULT: 'var(--green)', light: 'var(--green-light)' },
+      },
+      borderRadius: {
+        DEFAULT: 'var(--radius)',
+        sm: 'var(--radius-sm)',
+        lg: 'var(--radius-lg)',
+      },
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        DEFAULT: 'var(--shadow)',
+        lg: 'var(--shadow-lg)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
