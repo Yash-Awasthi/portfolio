@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Link, useParams } from 'react-router';
 import { motion, useReducedMotion, useScroll, useTransform } from 'motion/react';
 import { PresentationControls } from '@react-three/drei';
@@ -8,23 +8,20 @@ import { Scene } from '../three/Stage';
 import { Artifact } from '../three/Artifacts';
 import { PROJECTS } from '../data';
 import NotFound from './NotFound';
-import { setTint, ink } from '../lib/tint';
+import { ink } from '../lib/tint';
 
 export default function Project() {
   const { slug } = useParams();
   const reduce = useReducedMotion();
   const i = PROJECTS.findIndex((p) => p.slug === slug);
   const p = PROJECTS[i];
-  useEffect(() => {
-    if (p) setTint(p.tint);
-  }, [p]);
   if (!p) return <NotFound />;
   const next = PROJECTS[(i + 1) % PROJECTS.length];
 
   return (
     <Page color={p.color}>
       <title>{`${p.name} | Yash Awasthi`}</title>
-      <section className="mx-auto grid max-w-[1400px] gap-8 px-4 pt-24 md:min-h-[100dvh] md:grid-cols-12 md:px-8">
+      <section data-wash={p.tint} className="mx-auto grid max-w-[1400px] gap-8 px-4 pt-24 md:min-h-[100dvh] md:grid-cols-12 md:px-8">
         <div className="flex flex-col md:col-span-6 md:pb-16">
           <Link to="/#work" className="link-underline inline-flex w-fit items-center gap-2 text-[14px] text-muted">
             <ArrowLeft size={14} /> All work
@@ -38,7 +35,7 @@ export default function Project() {
           </div>
         </div>
         <div className="relative h-[46vh] md:col-span-6 md:h-auto">
-          <Scene className="h-full w-full" z={6.2}>
+          <Scene className="h-full w-full" radius={1.8}>
             <PresentationControls
               global={false}
               cursor
@@ -48,7 +45,7 @@ export default function Project() {
               azimuth={[-0.8, 0.8]}
               enabled={!reduce}
             >
-              <Artifact shape={p.shape} color={p.color} still={reduce} delay={0.9} tilt={0.15} />
+              <Artifact shape={p.shape} color={p.color} delay={reduce ? 0.2 : 0.9} tilt={0.15} />
             </PresentationControls>
           </Scene>
           <p className="pointer-events-none absolute bottom-2 right-0 font-mono text-[12px] text-muted">Drag to turn</p>

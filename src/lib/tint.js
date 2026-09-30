@@ -1,25 +1,40 @@
-import { animate, motionValue } from 'motion/react';
+import { useEffect } from 'react';
+import { motionValue, useScroll } from 'motion/react';
+import { PAPER, colourAt } from './colour';
 
-export const PAPER = '#eaf0f1';
+export { PAPER, wash } from './colour';
 
-// One page-wide wash colour, animated outside React so a section change never re-renders the tree.
+// The page-wide wash. Set straight from scroll position, never through React state.
 export const tint = motionValue(PAPER);
-
-let running;
-export function setTint(color) {
-  if (tint.get() === color) return;
-  running?.stop();
-  running = animate(tint, color, { duration: 1.1, ease: [0.16, 1, 0.3, 1] });
-}
 
 // Text-safe version of an accent: mixed toward ink so small type keeps AA contrast on the wash.
 export const ink = (color) => `color-mix(in oklab, ${color} 72%, #141a1f)`;
 
-// Blend an accent toward paper; `keep` is how much of the accent survives.
-export function wash(color, keep = 0.14) {
-  const a = parseInt(color.slice(1), 16);
-  const b = parseInt(PAPER.slice(1), 16);
-  const ch = (n, s) => (n >> s) & 255;
-  const mix = (s) => Math.round(ch(a, s) * keep + ch(b, s) * (1 - keep));
-  return `#${((mix(16) << 16) | (mix(8) << 8) | mix(0)).toString(16).padStart(6, '0')}`;
+// Every element with `data-wash` is a colour stop at its vertical centre. The wash is the linear
+// blend between the two stops either side of the middle of the viewport.
+export function useScrollWash(key) {
+  const { scrollY } = useScroll();
+  useEffect(() => {
+    let stops = [];
+    const update = () => tint.set(colourAt(stops, window.scrollY + window.innerHeight / 2));
+    const measure = () => {
+      stops = [...document.querySelectorAll('[data-wash]')]
+        .map((el) => {
+          const r = el.getBoundingClientRect();
+          return [r.top + window.scrollY + r.height / 2, el.dataset.wash];
+        })
+        .sort((a, b) => a[0] - b[0]);
+      update();
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.body);
+    window.addEventListener('resize', measure);
+    const off = scrollY.on('change', update);
+    measure();
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+      off();
+    };
+  }, [key, scrollY]);
 }

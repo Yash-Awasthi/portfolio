@@ -1,14 +1,12 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { useReducedMotion } from 'motion/react';
-import { View, PerspectiveCamera, Environment, Lightformer, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
+import { View, PerspectiveCamera, Environment, Lightformer } from '@react-three/drei';
 
 // One WebGL context for the whole site; every 3D spot is a View drawn into it.
 export function Stage() {
-  const reduce = useReducedMotion();
   return (
     <Canvas
-      frameloop={reduce ? 'demand' : 'always'}
       className="!fixed inset-0 !pointer-events-none"
       style={{ position: 'fixed', zIndex: 0 }}
       eventSource={document.getElementById('root')}
@@ -16,24 +14,8 @@ export function Stage() {
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
     >
       <View.Port />
-      {reduce && <RedrawOnScroll />}
     </Canvas>
   );
-}
-
-// With reduced motion nothing animates, so frames are drawn only when Views move on screen.
-function RedrawOnScroll() {
-  const invalidate = useThree((s) => s.invalidate);
-  useEffect(() => {
-    const redraw = () => invalidate();
-    window.addEventListener('scroll', redraw, { passive: true });
-    window.addEventListener('resize', redraw);
-    return () => {
-      window.removeEventListener('scroll', redraw);
-      window.removeEventListener('resize', redraw);
-    };
-  }, [invalidate]);
-  return null;
 }
 
 function Studio() {
@@ -53,15 +35,29 @@ function Studio() {
   );
 }
 
-export function Scene({ className, style, children, fov = 35, z = 6, shadow = true, ...props }) {
+// Backs the camera off until a sphere of `radius` fits the view on its tighter axis, so nothing
+// is cut off whatever shape the view has.
+function Fit({ radius }) {
+  const camera = useThree((st) => st.camera);
+  const size = useThree((st) => st.size);
+  useLayoutEffect(() => {
+    const v = THREE.MathUtils.degToRad(camera.fov) / 2;
+    const h = Math.atan(Math.tan(v) * (size.width / size.height));
+    camera.position.set(0, 0, radius / Math.sin(Math.min(v, h)));
+    camera.updateProjectionMatrix();
+  }, [camera, size, radius]);
+  return null;
+}
+
+export function Scene({ className, style, children, fov = 35, radius = 1.9, ...props }) {
   return (
     <View className={className} style={style} {...props}>
-      <PerspectiveCamera makeDefault position={[0, 0, z]} fov={fov} />
+      <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={fov} />
+      <Fit radius={radius} />
       <Studio />
       <ambientLight intensity={0.4} />
       <directionalLight position={[3, 5, 4]} intensity={1.2} />
       {children}
-      {shadow && <ContactShadows position={[0, -1.55, 0]} opacity={0.22} scale={5} blur={2.8} far={3} color="#141a1f" />}
     </View>
   );
 }

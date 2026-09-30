@@ -4,7 +4,7 @@ import { ReactLenis } from 'lenis/react';
 import { Stage } from './three/Stage';
 import { Nav } from './components/Nav';
 import { useScrollTo } from './lib/lenis';
-import { tint } from './lib/tint';
+import { tint, useScrollWash } from './lib/tint';
 import Home from './pages/Home';
 import Project from './pages/Project';
 import NotFound from './pages/NotFound';
@@ -24,6 +24,7 @@ function Site() {
   const location = useLocation();
   const scrollTo = useScrollTo();
   const toTop = () => !window.location.hash && scrollTo('top', true);
+  useScrollWash(location.pathname);
 
   return (
     <>

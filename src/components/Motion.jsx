@@ -10,7 +10,7 @@ export function Page({ children, color = '#141a1f' }) {
       <motion.main
         id="main"
         className="relative z-[1]"
-        initial={reduce ? false : { opacity: 0, y: 28 }}
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28 }}
         animate={{ opacity: 1, y: 0, transition: { duration: 0.9, ease: EASE, delay: 0.25 } }}
         exit={{ opacity: 0, y: -16, transition: { duration: 0.4, ease: EASE } }}
       >
@@ -45,7 +45,7 @@ export function Reveal({ as = 'div', delay = 0, y = 24, className, children, ...
   return (
     <M
       className={className}
-      initial={reduce ? false : { opacity: 0, y }}
+      initial={reduce ? { opacity: 0 } : { opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.9, ease: EASE, delay }}
@@ -62,8 +62,20 @@ export function Words({ text, as = 'h2', className, delay = 0, onLoad = false })
   const M = motion[as];
   const words = text.split(' ');
   const trigger = onLoad ? { animate: 'show' } : { whileInView: 'show', viewport: { once: true, amount: 0.4 } };
+  if (reduce) {
+    return (
+      <M
+        className={className}
+        initial={{ opacity: 0 }}
+        variants={{ show: { opacity: 1, transition: { duration: 0.6, delay } } }}
+        {...trigger}
+      >
+        {text}
+      </M>
+    );
+  }
   return (
-    <M className={className} initial={reduce ? false : 'hide'} {...trigger} aria-label={text}>
+    <M className={className} initial="hide" {...trigger} aria-label={text}>
       {words.map((w, i) => (
         <span key={i} aria-hidden>
           <span className="inline-block overflow-hidden pb-[0.08em] align-top">

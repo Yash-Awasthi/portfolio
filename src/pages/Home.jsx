@@ -8,7 +8,7 @@ import { HeroBlob, SwapArtifact, Artifact } from '../three/Artifacts';
 import { JourneyPath } from '../three/JourneyPath';
 import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS } from '../data';
 import { useScrollTo } from '../lib/lenis';
-import { setTint, ink, wash } from '../lib/tint';
+import { ink, wash } from '../lib/tint';
 
 const EASE = [0.16, 1, 0.3, 1];
 
@@ -21,9 +21,8 @@ const WASH = {
   contact: '#e3e8f5',
 };
 
-// Fires when the section crosses the middle of the viewport.
-const mid = { margin: '-50% 0px -50% 0px' };
 const JOURNEY_COLORS = JOURNEY.map((j) => j.color);
+const JOURNEY_VH = JOURNEY.length * 70 + 60;
 
 export default function Home() {
   const { hash } = useLocation();
@@ -58,22 +57,19 @@ function Hero() {
   const orbY = useTransform(scrollYProgress, [0, 1], [0, 220]);
   const orbScale = useTransform(scrollYProgress, [0, 1], [1, 0.72]);
 
-  useEffect(() => setTint(WASH.hero), []);
-
   return (
     <motion.section
       id="top"
       ref={ref}
-      onViewportEnter={() => setTint(WASH.hero)}
-      viewport={mid}
+      data-wash={WASH.hero}
       className="relative mx-auto grid min-h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-24 pb-10 md:px-8"
     >
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-[10%] h-[48%] md:inset-auto md:right-4 md:top-16 md:h-[64%] md:w-[44%]"
         style={reduce ? undefined : { y: orbY, scale: orbScale }}
       >
-        <Scene className="h-full w-full" z={7} shadow={false}>
-          <HeroBlob still={reduce} />
+        <Scene className="h-full w-full" radius={2.4}>
+          <HeroBlob />
         </Scene>
       </motion.div>
       <div />
@@ -125,8 +121,7 @@ function Statement() {
   return (
     <motion.section
       ref={ref}
-      onViewportEnter={() => setTint(WASH.statement)}
-      viewport={mid}
+      data-wash={WASH.statement}
       className="mx-auto max-w-[1400px] px-4 py-32 md:px-8 md:py-48"
     >
       <p className="max-w-[26ch] text-[clamp(1.9rem,4.2vw,3.9rem)] font-[480] leading-[1.08] tracking-[-0.03em]">
@@ -141,11 +136,10 @@ function Statement() {
 }
 
 function Word({ progress, range, color, children }) {
-  const reduce = useReducedMotion();
   const opacity = useTransform(progress, range, [0.14, 1]);
   return (
     <>
-      <motion.span style={{ opacity: reduce ? 1 : opacity, color: color ? ink(color) : undefined }}>{children}</motion.span>{' '}
+      <motion.span style={{ opacity, color: color ? ink(color) : undefined }}>{children}</motion.span>{' '}
     </>
   );
 }
@@ -163,12 +157,26 @@ function Band() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const left = useTransform(scrollYProgress, [0, 1], ['4%', '-38%']);
   const right = useTransform(scrollYProgress, [0, 1], ['-38%', '4%']);
+  if (reduce) {
+    // Without the sideways drift the rows would sit cut off at the edges, so they wrap instead.
+    return (
+      <section ref={ref} aria-label="Stack" className="mx-auto max-w-[1400px] px-4 py-10 md:px-8 md:py-16">
+        <p className="display flex flex-wrap gap-x-[0.35em] text-[clamp(2.4rem,6vw,5.5rem)] leading-[1.05]">
+          {BAND.flat().map((w, i) => (
+            <span key={w} style={i % 3 === 0 ? { color: BAND_COLORS[i % 2] } : { WebkitTextStroke: '1.2px #141a1f', color: 'transparent' }}>
+              {w}
+            </span>
+          ))}
+        </p>
+      </section>
+    );
+  }
   return (
     <section ref={ref} aria-label="Stack" className="overflow-hidden py-10 md:py-16">
       {BAND.map((row, r) => (
         <motion.p
           key={r}
-          style={reduce ? undefined : { x: r ? right : left }}
+          style={{ x: r ? right : left }}
           className="display flex w-max gap-[0.35em] whitespace-nowrap py-2 text-[clamp(3rem,9vw,8.5rem)]"
         >
           {[...row, ...row].map((w, i) => (
@@ -190,31 +198,19 @@ function Band() {
 }
 
 function Work() {
-  const reduce = useReducedMotion();
-  const [active, setActive] = useState(0);
-  const inView = useRef(false);
-  const activate = (i) => {
-    setActive(i);
-    if (inView.current) setTint(PROJECTS[i].tint);
-  };
+  const [active, activate] = useState(0);
   const p = PROJECTS[active];
 
   return (
     <motion.section
       id="work"
-      onViewportEnter={() => {
-        inView.current = true;
-        setTint(p.tint);
-      }}
-      onViewportLeave={() => (inView.current = false)}
-      viewport={{ margin: '-40% 0px -40% 0px' }}
       className="mx-auto max-w-[1400px] px-4 pt-16 pb-32 md:px-8"
     >
       <Words text="Selected work" className="display mb-14 text-[clamp(2.8rem,7vw,6.5rem)] md:mb-20" />
       <div className="grid gap-10 md:grid-cols-12">
         <div className="sticky top-24 hidden h-[72vh] md:col-span-5 md:block">
-          <Scene className="h-full w-full" z={6.5}>
-            <SwapArtifact shape={p.shape} color={p.color} still={reduce} />
+          <Scene className="h-full w-full" radius={1.55}>
+            <SwapArtifact shape={p.shape} color={p.color} />
           </Scene>
         </div>
         <ol className="md:col-span-7">
@@ -225,6 +221,7 @@ function Work() {
                 key={item.slug}
                 onViewportEnter={() => activate(i)}
                 viewport={{ margin: '-45% 0px -45% 0px' }}
+                data-wash={item.tint}
                 className="border-t border-ink/15 last:border-b"
               >
                 <Link
@@ -233,8 +230,8 @@ function Work() {
                   onFocus={() => activate(i)}
                   className="group relative grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-3 py-8 md:py-10"
                 >
-                  <Scene className="col-span-2 -mx-4 h-56 md:hidden" z={7}>
-                    <Artifact shape={item.shape} color={item.color} still={reduce} />
+                  <Scene className="col-span-2 -mx-4 h-60 md:hidden" radius={1.65}>
+                    <Artifact shape={item.shape} color={item.color} />
                   </Scene>
                   <h3
                     className={`display text-[clamp(2.2rem,4.6vw,4.4rem)] transition-colors duration-500 ${
@@ -272,33 +269,32 @@ function Work() {
 function Journey() {
   const ref = useRef();
   const reduce = useReducedMotion();
-  const inView = useRef(false);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
   const [step, setStep] = useState(0);
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
-    const i = Math.min(JOURNEY.length - 1, Math.max(0, Math.round(v * (JOURNEY.length - 1))));
-    if (i === step) return;
-    setStep(i);
-    if (inView.current) setTint(wash(JOURNEY[i].color));
+    setStep(Math.min(JOURNEY.length - 1, Math.max(0, Math.round(v * (JOURNEY.length - 1)))));
   });
   const item = JOURNEY[step];
-  const narrow = window.innerWidth < 768;
 
   return (
     <motion.section
       id="journey"
       ref={ref}
-      onViewportEnter={() => {
-        inView.current = true;
-        setTint(wash(item.color));
-      }}
-      onViewportLeave={() => (inView.current = false)}
-      viewport={{ margin: '-50% 0px -50% 0px' }}
       className="relative"
-      style={{ height: `${JOURNEY.length * 70 + 60}vh` }}
+      style={{ height: `${JOURNEY_VH}vh` }}
     >
+      {JOURNEY.map((j, i) => (
+        // Colour stops placed where the viewport centre sits when milestone i is showing.
+        <span
+          key={i}
+          aria-hidden
+          data-wash={wash(j.color)}
+          className="absolute left-0 h-0 w-0"
+          style={{ top: `${(i / (JOURNEY.length - 1)) * (JOURNEY_VH - 100) + 50}vh` }}
+        />
+      ))}
       <div className="sticky top-0 mx-auto grid h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-20 pb-10 md:grid-cols-12 md:grid-rows-1 md:px-8">
-        <Scene className="h-full w-full md:order-2 md:col-span-7" z={narrow ? 11.5 : 8.6} fov={38} shadow={false}>
+        <Scene className="h-full w-full md:order-2 md:col-span-7" radius={2.95} fov={38}>
           <JourneyPath progress={scrollYProgress} stops={JOURNEY_COLORS} />
         </Scene>
         <div className="flex flex-col justify-end md:order-1 md:col-span-5 md:justify-center">
@@ -307,9 +303,9 @@ function Journey() {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step}
-                initial={reduce ? false : { opacity: 0, y: 24, filter: 'blur(6px)' }}
+                initial={reduce ? { opacity: 0 } : { opacity: 0, y: 24, filter: 'blur(6px)' }}
                 animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: EASE } }}
-                exit={{ opacity: 0, y: -16, filter: 'blur(6px)', transition: { duration: 0.25 } }}
+                exit={reduce ? { opacity: 0, transition: { duration: 0.2 } } : { opacity: 0, y: -16, filter: 'blur(6px)', transition: { duration: 0.25 } }}
               >
                 <p className="font-mono text-[13px]" style={{ color: ink(item.color) }}>
                   {item.when}
@@ -338,8 +334,7 @@ function Journey() {
 function Experience() {
   return (
     <motion.section
-      onViewportEnter={() => setTint(WASH.experience)}
-      viewport={mid}
+      data-wash={WASH.experience}
       className="mx-auto max-w-[1400px] px-4 py-32 md:px-8 md:py-44"
     >
       <div className="grid gap-12 md:grid-cols-12">
@@ -383,8 +378,7 @@ const CERT_COLORS = ['#3d5bd9', '#2a8f8a', '#5b5fc7'];
 function Credentials() {
   return (
     <motion.section
-      onViewportEnter={() => setTint(WASH.credentials)}
-      viewport={mid}
+      data-wash={WASH.credentials}
       className="mx-auto max-w-[1400px] px-4 pb-32 md:px-8"
     >
       <h2 className="mb-8 text-[15px] text-muted">Certifications</h2>
@@ -430,8 +424,7 @@ function Contact() {
   return (
     <motion.section
       id="contact"
-      onViewportEnter={() => setTint(WASH.contact)}
-      viewport={{ margin: '-30% 0px -30% 0px' }}
+      data-wash={WASH.contact}
       className="mx-auto max-w-[1400px] px-4 pt-24 pb-10 md:px-8"
     >
       <Words text="Get in touch" className="display text-[clamp(3.4rem,11vw,11rem)]" />

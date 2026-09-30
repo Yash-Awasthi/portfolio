@@ -19,9 +19,11 @@ One cool family only: blues, teals and indigo, muted. No warm hues and no multi-
 | `muted` | `#52606a` | Secondary text |
 | `accent` | `#3d5bd9` | Cobalt, the default accent |
 
-The page background is one wash that eases (1.1 s) to a new pastel as each section reaches mid-screen:
+The page background blends linearly with scroll. Every element carrying `data-wash` is a colour
+stop at its vertical centre, and the wash is the mix of the two stops either side of the middle of
+the viewport (`src/lib/tint.js`, checked by `node src/lib/tint.check.mjs`). Section stops:
 hero `#e3ecf2`, statement `#e0eee8`, experience `#e7e5f3`, certifications `#dfecee`, contact `#e3e8f5`.
-In the work list it follows the active project's tint; in the journey it follows the milestone.
+Each work row is a stop in its project's tint; the journey has one stop per milestone.
 
 | Project | Accent | Tint |
 | --- | --- | --- |
@@ -94,8 +96,12 @@ zero or fading; things move into place. On project pages the entrance waits 0.9 
 | Ping | Two phones | Turn toward each other, the card arcs across, both screens confirm, turn back |
 | RISC-V attn | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
 
-On the home page, switching projects is a vertical carousel: the current object lifts out of
-frame and the next rises in and replays its entrance.
+On the home page, switching projects is a turntable: the current object turns edge-on and the
+next turns in from the other side, replaying its entrance, all inside the frame.
+
+Reduced motion (for example Windows with "Animation effects" off) keeps each object's own story
+and the colour washes, fades text in without sliding, crossfades pages, and drops pointer tilt,
+bobbing, parallax, the sliding band (it wraps instead), the page wipe and smooth scrolling.
 
 ## Screens
 

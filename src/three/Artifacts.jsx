@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Float, MeshDistortMaterial, RoundedBox, Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
+import { useReducedMotion } from 'motion/react';
 import { easeOut, easeInOut, span, lerp } from './ease';
 
 const COBALT = '#3d5bd9';
@@ -55,11 +56,13 @@ function Spin({ speed = 0.2, axis = 'y', still, children, ...props }) {
 
 const HERO_MOONS = ['#3d5bd9', '#2a8f8a', '#5b5fc7'];
 
+// Reduced motion keeps each object's own story but drops pointer tilt, bobbing and the carousel.
 export function HeroBlob({ still }) {
-  const tilt = useTilt(0.5, still);
+  const calm = useReducedMotion();
+  const tilt = useTilt(calm ? 0 : 0.5, still);
   return (
     <group ref={tilt}>
-      <Float speed={still ? 0 : 1.4} rotationIntensity={0.6} floatIntensity={0.8}>
+      <Float speed={still || calm ? 0 : 1.4} rotationIntensity={0.6} floatIntensity={0.8}>
         <mesh scale={1.2}>
           <icosahedronGeometry args={[1, 64]} />
           <MeshDistortMaterial color="#e4e5ea" metalness={1} roughness={0.08} distort={still ? 0.25 : 0.38} speed={still ? 0 : 1.6} />
@@ -514,8 +517,8 @@ function Chip({ still, color, delay }) {
 
 const SHAPES = { council: Council, globe: Globe, rings: Rings, phone: Desk, files: Files, pair: Pair, chip: Chip };
 
-// Vertical carousel: the current object lifts out of frame, the next rises in from below and
-// replays its entrance.
+// Turntable swap that never leaves the frame: the current object turns edge-on, the next turns
+// in from the other side and replays its entrance.
 export function SwapArtifact({ shape, color, still }) {
   const [shown, setShown] = useState({ shape, color, at: null });
   const ref = useRef();
@@ -527,9 +530,9 @@ export function SwapArtifact({ shape, color, still }) {
     const now = state.clock.elapsedTime;
     if (shown.shape !== shape) {
       if (leaving.current === null) leaving.current = now;
-      const k = easeInOut(span(now - leaving.current, 0, 0.4));
-      g.position.y = k * 3.6;
-      g.rotation.y = k * 0.8;
+      const k = easeInOut(span(now - leaving.current, 0, 0.35));
+      g.rotation.y = k * (Math.PI / 2);
+      g.scale.setScalar(1 - k * 0.12);
       if (k >= 1) {
         leaving.current = null;
         arrived.current = null;
@@ -538,11 +541,12 @@ export function SwapArtifact({ shape, color, still }) {
       return;
     }
     if (arrived.current === null) arrived.current = now;
-    const k = easeOut(span(now - arrived.current, 0, 0.8));
-    g.position.y = lerp(-3.6, 0, k);
-    g.rotation.y = lerp(-0.8, 0, k);
+    const k = easeOut(span(now - arrived.current, 0, 0.7));
+    g.rotation.y = lerp(-Math.PI / 2, 0, k);
+    g.scale.setScalar(lerp(0.88, 1, k));
   });
-  if (still) return <Artifact shape={shape} color={color} still />;
+  const calm = useReducedMotion();
+  if (still || calm) return <Artifact key={shape} shape={shape} color={color} still={still} />;
   return (
     <group ref={ref}>
       <Artifact key={shown.shape} shape={shown.shape} color={shown.color} still={still} />
@@ -551,11 +555,12 @@ export function SwapArtifact({ shape, color, still }) {
 }
 
 export function Artifact({ shape, color, still, delay = 0, tilt = 0.3 }) {
-  const ref = useTilt(tilt, still);
+  const calm = useReducedMotion();
+  const ref = useTilt(calm ? 0 : tilt, still);
   const Shape = SHAPES[shape];
   return (
     <group ref={ref}>
-      <Float speed={still ? 0 : 1.2} rotationIntensity={0.15} floatIntensity={0.4}>
+      <Float speed={still || calm ? 0 : 1.2} rotationIntensity={0.15} floatIntensity={0.4}>
         <Shape still={still} color={color} delay={delay} />
       </Float>
     </group>
