@@ -13,7 +13,7 @@ export const SOCIAL = [
   { label: 'Telegram', href: 'https://t.me/yvawasthi' },
 ];
 
-// `shape` picks the object in three/Artifacts.jsx; `tint` is its accent material.
+// `shape` picks the object in three/Artifacts.jsx; `color` is its accent, `tint` the page wash behind it.
 export const PROJECTS = [
   {
     slug: 'nexus',
@@ -24,6 +24,8 @@ export const PROJECTS = [
     github: 'https://github.com/Yash-Awasthi/Nexus',
     live: 'https://nexus-api-three-kappa.vercel.app',
     shape: 'council',
+    color: '#3d5bd9',
+    tint: '#e1e7f6',
     overview:
       'Nexus sends the same task to several language models, coordinates multi-step agents and keeps memory across sessions. It is a self-hostable TypeScript monorepo with a Fastify API, a React dashboard and background workers, and it is bring-your-own-key: provider keys stay inside your deployment.',
     points: [
@@ -42,7 +44,10 @@ export const PROJECTS = [
     github: 'https://github.com/Yash-Awasthi/fin-scrape',
     live: 'https://winfin.pages.dev/app/',
     image: '/work/worldfin.jpg',
+    imageAlt: 'landing page with the live event globe',
     shape: 'globe',
+    color: '#2a8f8a',
+    tint: '#dcecea',
     overview:
       'WorldFin reads world and geopolitical news every 30 minutes, works out which sectors and tickers each event moves, and turns related events into scenarios with a probability and an instruction: invest, pull out or observe. Every call is then scored against the market move that followed.',
     points: [
@@ -60,6 +65,8 @@ export const PROJECTS = [
     stack: ['Python', 'FastAPI', 'PostgreSQL', 'React Native', 'Expo', 'TypeScript', 'OpenCV', 'Docker'],
     github: 'https://github.com/Yash-Awasthi/adapfit',
     shape: 'rings',
+    color: '#4a7fc1',
+    tint: '#e0e9f3',
     overview:
       'AdapFit answers one question every morning: what should I do today, and why? It turns daily check-ins and wearable data into a train, reduce, recover or rest decision, and explains the decision instead of showing a dashboard of raw numbers.',
     points: [
@@ -77,6 +84,8 @@ export const PROJECTS = [
     stack: ['Node.js', 'Kotlin', 'Android', 'WebSocket', 'QUIC', 'TLS', 'SSH'],
     github: 'https://github.com/Yash-Awasthi/PocketDesk',
     shape: 'phone',
+    color: '#5b5fc7',
+    tint: '#e4e5f5',
     overview:
       'PocketDesk is a self-hosted bridge between a PC and an Android phone. Coding agents such as Claude Code and Codex run on the PC; the phone drives them, approves what they want to do, and can watch and control the desktop. No cloud and no accounts.',
     points: [
@@ -94,6 +103,8 @@ export const PROJECTS = [
     stack: ['TypeScript', 'Astro', 'React', 'Cloudflare Workers', 'D1', 'Drizzle ORM', 'Playwright'],
     github: 'https://github.com/Yash-Awasthi/CTF',
     shape: 'files',
+    color: '#3f7f9f',
+    tint: '#deeaef',
     overview:
       'A browser capture-the-flag event: thirty sequential challenges that tell one investigation. Every player gets their own evidence (names, dates, files, audio, images) derived from an event secret, so a copied answer traces back to its owner.',
     points: [
@@ -111,6 +122,8 @@ export const PROJECTS = [
     stack: ['Kotlin', 'Jetpack Compose', 'MediaPipe', 'BLE', 'Wi-Fi Direct', 'Room'],
     github: 'https://github.com/Yash-Awasthi/Ping',
     shape: 'pair',
+    color: '#6a78d1',
+    tint: '#e5e8f6',
     overview:
       'Two people hold the same hand gesture up to their cameras and their phones swap contact cards. No internet, no accounts, no QR codes. The gesture decides who to connect to; a six-digit check decides whether to trust them.',
     points: [
@@ -128,6 +141,8 @@ export const PROJECTS = [
     stack: ['C', 'C++', 'RISC-V', 'GCC', 'Binutils'],
     github: 'https://github.com/Yash-Awasthi/RISC-V_Injection',
     shape: 'chip',
+    color: '#237a94',
+    tint: '#d9eaee',
     overview:
       'A custom RISC-V toolchain that adds a native attn instruction for transformer attention. Plain C code gets the instruction without intrinsics or inline assembly: the compiler recognises the pattern and emits it.',
     points: [
@@ -142,30 +157,35 @@ export const PROJECTS = [
 export const JOURNEY = [
   {
     when: '2021',
+    color: '#237a94',
     title: 'Class X',
     place: 'Kendriya Vidyalaya, Damoh',
     body: 'Finished with 98.2%.',
   },
   {
     when: '2023',
+    color: '#2a8f8a',
     title: 'Class XII',
     place: 'Kendriya Vidyalaya, Mahasamund',
     body: 'Finished with 90.2%.',
   },
   {
     when: '2024 - 2028',
+    color: '#3f7f9f',
     title: 'B.Tech, Computer Science',
     place: 'NIT Raipur',
     body: 'CGPA 9.26. Class representative for 120+ students and convenor of the Association of Computer Engineers.',
   },
   {
     when: 'May - Jul 2025',
+    color: '#3d5bd9',
     title: 'Research intern, Physics',
     place: 'NIT Raipur',
     body: "Replicated and extended MIT Media Lab's TARF sea-to-air speech system. Built a socket pipeline under 200 ms latency and improved signal quality by 8-12 dB.",
   },
   {
     when: 'Jul - Sep 2026',
+    color: '#4a7fc1',
     title: 'App development intern',
     place: 'Cloord Solutions',
     body: 'Backend, API and React Native work on a multi-tenant school platform used by 1,000+ parents.',

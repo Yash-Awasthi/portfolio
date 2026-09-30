@@ -1,4 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router';
+import { motion } from 'motion/react';
+import { tint } from '../lib/tint';
 import { PERSON } from '../data';
 import { useScrollTo } from '../lib/lenis';
 
@@ -20,7 +22,8 @@ export function Nav() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 bg-paper/80 backdrop-blur-md">
+    <header className="fixed inset-x-0 top-0 z-30 backdrop-blur-md">
+      <motion.div aria-hidden className="absolute inset-0 -z-10 opacity-80" style={{ backgroundColor: tint }} />
       <nav aria-label="Primary" className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 md:px-8">
         <Link
           to="/"

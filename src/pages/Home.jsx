@@ -8,8 +8,22 @@ import { HeroBlob, SwapArtifact, Artifact } from '../three/Artifacts';
 import { JourneyPath } from '../three/JourneyPath';
 import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS } from '../data';
 import { useScrollTo } from '../lib/lenis';
+import { setTint, ink, wash } from '../lib/tint';
 
 const EASE = [0.16, 1, 0.3, 1];
+
+// Cool pastel washes the page eases between as each section reaches mid-screen.
+const WASH = {
+  hero: '#e3ecf2',
+  statement: '#e0eee8',
+  experience: '#e7e5f3',
+  credentials: '#dfecee',
+  contact: '#e3e8f5',
+};
+
+// Fires when the section crosses the middle of the viewport.
+const mid = { margin: '-50% 0px -50% 0px' };
+const JOURNEY_COLORS = JOURNEY.map((j) => j.color);
 
 export default function Home() {
   const { hash } = useLocation();
@@ -24,6 +38,7 @@ export default function Home() {
     <Page>
       <Hero />
       <Statement />
+      <Band />
       <Work />
       <Journey />
       <Experience />
@@ -36,17 +51,36 @@ export default function Home() {
 function Hero() {
   const reduce = useReducedMotion();
   const scrollTo = useScrollTo();
+  const ref = useRef();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
+  const nameY = useTransform(scrollYProgress, [0, 1], [0, -140]);
+  const fade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const orbY = useTransform(scrollYProgress, [0, 1], [0, 220]);
+  const orbScale = useTransform(scrollYProgress, [0, 1], [1, 0.72]);
+
+  useEffect(() => setTint(WASH.hero), []);
+
   return (
-    <section id="top" className="relative mx-auto grid min-h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-24 pb-10 md:px-8">
-      <Scene
+    <motion.section
+      id="top"
+      ref={ref}
+      onViewportEnter={() => setTint(WASH.hero)}
+      viewport={mid}
+      className="relative mx-auto grid min-h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-24 pb-10 md:px-8"
+    >
+      <motion.div
         className="pointer-events-none absolute inset-x-0 top-[10%] h-[48%] md:inset-auto md:right-4 md:top-16 md:h-[64%] md:w-[44%]"
-        z={7}
-        shadow={false}
+        style={reduce ? undefined : { y: orbY, scale: orbScale }}
       >
-        <HeroBlob still={reduce} />
-      </Scene>
+        <Scene className="h-full w-full" z={7} shadow={false}>
+          <HeroBlob still={reduce} />
+        </Scene>
+      </motion.div>
       <div />
-      <div className="relative grid gap-10 md:grid-cols-12 md:items-end">
+      <motion.div
+        className="relative grid gap-10 md:grid-cols-12 md:items-end"
+        style={reduce ? undefined : { y: nameY, opacity: fade }}
+      >
         <Words
           as="h1"
           onLoad
@@ -70,115 +104,202 @@ function Hero() {
             </a>
           </div>
         </Reveal>
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   );
 }
 
-const STATEMENT =
-  'I like software that holds up when things go wrong: payments that settle exactly once, terminals that resume where the network dropped them, and models that are scored against what actually happened.';
+// Plain runs stay ink; the three examples each light up in a project colour as they are reached.
+const STATEMENT = [
+  ['I like software that holds up when things go wrong:'],
+  ['payments that settle exactly once,', '#4a7fc1'],
+  ['terminals that resume where the network dropped them,', '#5b5fc7'],
+  ['and'],
+  ['models that are scored against what actually happened.', '#2a8f8a'],
+];
 
 function Statement() {
   const ref = useRef();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start 0.85', 'end 0.45'] });
-  const words = STATEMENT.split(' ');
+  const words = STATEMENT.flatMap(([text, color]) => text.split(' ').map((w) => [w, color]));
   return (
-    <section ref={ref} className="mx-auto max-w-[1400px] px-4 py-32 md:px-8 md:py-48">
+    <motion.section
+      ref={ref}
+      onViewportEnter={() => setTint(WASH.statement)}
+      viewport={mid}
+      className="mx-auto max-w-[1400px] px-4 py-32 md:px-8 md:py-48"
+    >
       <p className="max-w-[26ch] text-[clamp(1.9rem,4.2vw,3.9rem)] font-[480] leading-[1.08] tracking-[-0.03em]">
-        {words.map((w, i) => (
-          <Word key={i} progress={scrollYProgress} range={[i / words.length, (i + 1) / words.length]}>
+        {words.map(([w, color], i) => (
+          <Word key={i} progress={scrollYProgress} range={[i / words.length, (i + 1) / words.length]} color={color}>
             {w}
           </Word>
         ))}
       </p>
-    </section>
+    </motion.section>
   );
 }
 
-function Word({ progress, range, children }) {
+function Word({ progress, range, color, children }) {
   const reduce = useReducedMotion();
   const opacity = useTransform(progress, range, [0.14, 1]);
   return (
     <>
-      <motion.span style={{ opacity: reduce ? 1 : opacity }}>{children}</motion.span>{' '}
+      <motion.span style={{ opacity: reduce ? 1 : opacity, color: color ? ink(color) : undefined }}>{children}</motion.span>{' '}
     </>
+  );
+}
+
+const BAND = [
+  ['TypeScript', 'Python', 'Kotlin', 'C++', 'React', 'Node.js', 'FastAPI', 'Fastify'],
+  ['PostgreSQL', 'Redis', 'AWS', 'Cloudflare', 'PyTorch', 'Docker', 'Three.js', 'React Native'],
+];
+const BAND_COLORS = ['#3d5bd9', '#2a8f8a'];
+
+// The page's one marquee: two rows of the stack, pushed sideways by the scroll itself.
+function Band() {
+  const ref = useRef();
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
+  const left = useTransform(scrollYProgress, [0, 1], ['4%', '-38%']);
+  const right = useTransform(scrollYProgress, [0, 1], ['-38%', '4%']);
+  return (
+    <section ref={ref} aria-label="Stack" className="overflow-hidden py-10 md:py-16">
+      {BAND.map((row, r) => (
+        <motion.p
+          key={r}
+          style={reduce ? undefined : { x: r ? right : left }}
+          className="display flex w-max gap-[0.35em] whitespace-nowrap py-2 text-[clamp(3rem,9vw,8.5rem)]"
+        >
+          {[...row, ...row].map((w, i) => (
+            <span
+              key={i}
+              style={
+                (i + r) % 3 === 0
+                  ? { color: BAND_COLORS[(i + r * 3) % BAND_COLORS.length] }
+                  : { WebkitTextStroke: '1.5px #141a1f', color: 'transparent' }
+              }
+            >
+              {w}
+            </span>
+          ))}
+        </motion.p>
+      ))}
+    </section>
   );
 }
 
 function Work() {
   const reduce = useReducedMotion();
   const [active, setActive] = useState(0);
+  const inView = useRef(false);
+  const activate = (i) => {
+    setActive(i);
+    if (inView.current) setTint(PROJECTS[i].tint);
+  };
+  const p = PROJECTS[active];
+
   return (
-    <section id="work" className="mx-auto max-w-[1400px] px-4 pb-32 md:px-8">
+    <motion.section
+      id="work"
+      onViewportEnter={() => {
+        inView.current = true;
+        setTint(p.tint);
+      }}
+      onViewportLeave={() => (inView.current = false)}
+      viewport={{ margin: '-40% 0px -40% 0px' }}
+      className="mx-auto max-w-[1400px] px-4 pt-16 pb-32 md:px-8"
+    >
       <Words text="Selected work" className="display mb-14 text-[clamp(2.8rem,7vw,6.5rem)] md:mb-20" />
       <div className="grid gap-10 md:grid-cols-12">
         <div className="sticky top-24 hidden h-[72vh] md:col-span-5 md:block">
           <Scene className="h-full w-full" z={6.5}>
-            <SwapArtifact shape={PROJECTS[active].shape} still={reduce} />
+            <SwapArtifact shape={p.shape} color={p.color} still={reduce} />
           </Scene>
         </div>
         <ol className="md:col-span-7">
-          {PROJECTS.map((p, i) => (
-            <motion.li
-              key={p.slug}
-              onViewportEnter={() => setActive(i)}
-              viewport={{ margin: '-45% 0px -45% 0px' }}
-              className="border-t border-line last:border-b"
-            >
-              <Link
-                to={`/work/${p.slug}`}
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                className="group grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-3 py-8 md:py-10"
+          {PROJECTS.map((item, i) => {
+            const on = active === i;
+            return (
+              <motion.li
+                key={item.slug}
+                onViewportEnter={() => activate(i)}
+                viewport={{ margin: '-45% 0px -45% 0px' }}
+                className="border-t border-ink/15 last:border-b"
               >
-                <Scene className="col-span-2 -mx-4 h-56 md:hidden" z={7}>
-                  <Artifact shape={p.shape} still={reduce} />
-                </Scene>
-                <h3
-                  className={`display text-[clamp(2.2rem,4.6vw,4.4rem)] transition-colors duration-500 ${
-                    active === i ? 'text-ink' : 'text-ink/35'
-                  }`}
+                <Link
+                  to={`/work/${item.slug}`}
+                  onMouseEnter={() => activate(i)}
+                  onFocus={() => activate(i)}
+                  className="group relative grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-3 py-8 md:py-10"
                 >
-                  {p.name}
-                </h3>
-                <ArrowUpRight
-                  size={28}
-                  weight="light"
-                  className={`mt-2 transition-all duration-500 ${
-                    active === i ? 'text-accent opacity-100' : 'opacity-0'
-                  } group-hover:translate-x-1 group-hover:-translate-y-1`}
-                  aria-hidden
-                />
-                <p className="col-span-2 max-w-[48ch] text-[16px] leading-relaxed text-muted">{p.line}</p>
-                <p className="col-span-2 font-mono text-[12px] tracking-wide text-muted">
-                  {p.year} &nbsp;/&nbsp; {p.stack.slice(0, 4).join(', ')}
-                </p>
-              </Link>
-            </motion.li>
-          ))}
+                  <Scene className="col-span-2 -mx-4 h-56 md:hidden" z={7}>
+                    <Artifact shape={item.shape} color={item.color} still={reduce} />
+                  </Scene>
+                  <h3
+                    className={`display text-[clamp(2.2rem,4.6vw,4.4rem)] transition-colors duration-500 ${
+                      on ? 'text-ink' : 'text-ink/30'
+                    }`}
+                  >
+                    {item.name}
+                  </h3>
+                  <ArrowUpRight
+                    size={28}
+                    weight="light"
+                    style={{ color: item.color }}
+                    className={`mt-2 transition-all duration-500 ${on ? 'opacity-100' : 'opacity-0'} group-hover:translate-x-1 group-hover:-translate-y-1`}
+                    aria-hidden
+                  />
+                  <p className="col-span-2 max-w-[48ch] text-[16px] leading-relaxed text-muted">{item.line}</p>
+                  <p className="col-span-2 font-mono text-[12px] tracking-wide text-muted">
+                    {item.year} &nbsp;/&nbsp; {item.stack.slice(0, 4).join(', ')}
+                  </p>
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 -top-px h-[3px] origin-left transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                    style={{ backgroundColor: item.color, transform: `scaleX(${on ? 1 : 0})` }}
+                  />
+                </Link>
+              </motion.li>
+            );
+          })}
         </ol>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function Journey() {
   const ref = useRef();
   const reduce = useReducedMotion();
+  const inView = useRef(false);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
   const [step, setStep] = useState(0);
   useMotionValueEvent(scrollYProgress, 'change', (v) => {
     const i = Math.min(JOURNEY.length - 1, Math.max(0, Math.round(v * (JOURNEY.length - 1))));
-    setStep((s) => (s === i ? s : i));
+    if (i === step) return;
+    setStep(i);
+    if (inView.current) setTint(wash(JOURNEY[i].color));
   });
   const item = JOURNEY[step];
   const narrow = window.innerWidth < 768;
 
   return (
-    <section id="journey" ref={ref} className="relative" style={{ height: `${JOURNEY.length * 70 + 60}vh` }}>
+    <motion.section
+      id="journey"
+      ref={ref}
+      onViewportEnter={() => {
+        inView.current = true;
+        setTint(wash(item.color));
+      }}
+      onViewportLeave={() => (inView.current = false)}
+      viewport={{ margin: '-50% 0px -50% 0px' }}
+      className="relative"
+      style={{ height: `${JOURNEY.length * 70 + 60}vh` }}
+    >
       <div className="sticky top-0 mx-auto grid h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-20 pb-10 md:grid-cols-12 md:grid-rows-1 md:px-8">
         <Scene className="h-full w-full md:order-2 md:col-span-7" z={narrow ? 11.5 : 8.6} fov={38} shadow={false}>
-          <JourneyPath progress={scrollYProgress} count={JOURNEY.length} />
+          <JourneyPath progress={scrollYProgress} stops={JOURNEY_COLORS} />
         </Scene>
         <div className="flex flex-col justify-end md:order-1 md:col-span-5 md:justify-center">
           <h2 className="mb-10 text-[15px] text-muted">Journey</h2>
@@ -186,11 +307,13 @@ function Journey() {
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={step}
-                initial={reduce ? false : { opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } }}
-                exit={{ opacity: 0, y: -16, transition: { duration: 0.25 } }}
+                initial={reduce ? false : { opacity: 0, y: 24, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.6, ease: EASE } }}
+                exit={{ opacity: 0, y: -16, filter: 'blur(6px)', transition: { duration: 0.25 } }}
               >
-                <p className="font-mono text-[13px] text-accent">{item.when}</p>
+                <p className="font-mono text-[13px]" style={{ color: ink(item.color) }}>
+                  {item.when}
+                </p>
                 <h3 className="display mt-4 text-[clamp(2.2rem,4.4vw,4rem)]">{item.title}</h3>
                 <p className="mt-3 text-[17px]">{item.place}</p>
                 <p className="mt-4 max-w-[40ch] text-[16px] leading-relaxed text-muted">{item.body}</p>
@@ -198,22 +321,27 @@ function Journey() {
             </AnimatePresence>
           </div>
           <div className="mt-8 flex gap-2" aria-hidden>
-            {JOURNEY.map((_, i) => (
+            {JOURNEY.map((j, i) => (
               <span
                 key={i}
-                className={`h-[3px] w-8 transition-colors duration-500 ${i <= step ? 'bg-accent' : 'bg-line'}`}
+                className="h-[3px] w-8 transition-colors duration-500"
+                style={{ backgroundColor: i <= step ? j.color : 'rgb(20 26 31 / 0.12)' }}
               />
             ))}
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
 function Experience() {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 py-32 md:px-8 md:py-44">
+    <motion.section
+      onViewportEnter={() => setTint(WASH.experience)}
+      viewport={mid}
+      className="mx-auto max-w-[1400px] px-4 py-32 md:px-8 md:py-44"
+    >
       <div className="grid gap-12 md:grid-cols-12">
         <div className="md:col-span-5">
           <Words text="Where I have shipped" className="display text-[clamp(2.6rem,5.4vw,5rem)]" />
@@ -226,13 +354,19 @@ function Experience() {
         <div className="md:col-span-7 md:pt-4">
           <ul className="grid gap-x-10 gap-y-10 sm:grid-cols-2">
             {CLOORD.points.map((pt, i) => (
-              <Reveal as="li" key={i} delay={i * 0.06} className="border-t border-ink pt-5 text-[17px] leading-relaxed">
+              <Reveal
+                as="li"
+                key={i}
+                delay={i * 0.06}
+                className="border-t-2 pt-5 text-[17px] leading-relaxed"
+                style={{ borderColor: PROJECTS[i % PROJECTS.length].color }}
+              >
                 {pt}
               </Reveal>
             ))}
             <Reveal as="li" delay={0.3} className="flex flex-wrap content-start gap-2 pt-5">
               {CLOORD.stack.map((s) => (
-                <span key={s} className="rounded-full border border-line px-3 py-1 font-mono text-[12px] text-muted">
+                <span key={s} className="rounded-full border border-ink/15 bg-white/40 px-3 py-1 font-mono text-[12px] text-muted">
                   {s}
                 </span>
               ))}
@@ -240,17 +374,28 @@ function Experience() {
           </ul>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }
 
+const CERT_COLORS = ['#3d5bd9', '#2a8f8a', '#5b5fc7'];
+
 function Credentials() {
   return (
-    <section className="mx-auto max-w-[1400px] px-4 pb-32 md:px-8">
+    <motion.section
+      onViewportEnter={() => setTint(WASH.credentials)}
+      viewport={mid}
+      className="mx-auto max-w-[1400px] px-4 pb-32 md:px-8"
+    >
       <h2 className="mb-8 text-[15px] text-muted">Certifications</h2>
-      <div className="grid gap-px bg-line md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3">
         {CERTS.map((c, i) => (
-          <Reveal key={c.name} delay={i * 0.08} className="flex min-h-[13rem] flex-col justify-between bg-paper p-6 md:p-8">
+          <Reveal
+            key={c.name}
+            delay={i * 0.08}
+            className="flex min-h-[13rem] flex-col justify-between border-t-2 bg-white/40 p-6 transition-transform duration-500 hover:-translate-y-1 md:p-8"
+            style={{ borderColor: CERT_COLORS[i] }}
+          >
             <p className="text-[21px] font-medium leading-snug tracking-tight">{c.name}</p>
             <div className="mt-8 flex items-end justify-between gap-4 text-[14px] text-muted">
               <span>
@@ -267,7 +412,7 @@ function Credentials() {
           </Reveal>
         ))}
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -283,7 +428,12 @@ function Contact() {
     }
   };
   return (
-    <section id="contact" className="mx-auto max-w-[1400px] px-4 pt-24 pb-10 md:px-8">
+    <motion.section
+      id="contact"
+      onViewportEnter={() => setTint(WASH.contact)}
+      viewport={{ margin: '-30% 0px -30% 0px' }}
+      className="mx-auto max-w-[1400px] px-4 pt-24 pb-10 md:px-8"
+    >
       <Words text="Get in touch" className="display text-[clamp(3.4rem,11vw,11rem)]" />
       <Reveal className="mt-12 flex flex-wrap items-center gap-4">
         <a
@@ -301,7 +451,7 @@ function Contact() {
           <span aria-live="polite">{copied ? 'Copied' : 'Copy email'}</span>
         </button>
       </Reveal>
-      <footer className="mt-32 flex flex-col gap-6 border-t border-line pt-6 text-[14px] text-muted md:flex-row md:items-center md:justify-between">
+      <footer className="mt-32 flex flex-col gap-6 border-t border-ink/15 pt-6 text-[14px] text-muted md:flex-row md:items-center md:justify-between">
         <ul className="flex flex-wrap gap-x-6 gap-y-2">
           {SOCIAL.map((s) => (
             <li key={s.label}>
@@ -313,6 +463,6 @@ function Contact() {
         </ul>
         <p>&copy; 2026 {PERSON.name}</p>
       </footer>
-    </section>
+    </motion.section>
   );
 }

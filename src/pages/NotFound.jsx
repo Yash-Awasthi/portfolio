@@ -1,7 +1,10 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router';
+import { setTint, PAPER } from '../lib/tint';
 import { Page } from '../components/Motion';
 
 export default function NotFound() {
+  useEffect(() => setTint(PAPER), []);
   return (
     <Page>
       <section className="mx-auto flex min-h-[100dvh] max-w-[1400px] flex-col justify-center px-4 md:px-8">

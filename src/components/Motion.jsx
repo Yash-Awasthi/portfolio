@@ -2,8 +2,8 @@ import { motion, useReducedMotion } from 'motion/react';
 
 const EASE = [0.16, 1, 0.3, 1];
 
-// Route wrapper: an ink panel lifts off on enter and rises back on exit.
-export function Page({ children }) {
+// Route wrapper: a panel in the page's colour lifts off on enter; an ink panel rises on exit.
+export function Page({ children, color = '#141a1f' }) {
   const reduce = useReducedMotion();
   return (
     <>
@@ -20,7 +20,8 @@ export function Page({ children }) {
         <>
           <motion.div
             aria-hidden
-            className="pointer-events-none fixed inset-0 z-50 origin-top bg-ink"
+            className="pointer-events-none fixed inset-0 z-50 origin-top"
+            style={{ backgroundColor: color }}
             initial={{ scaleY: 1 }}
             animate={{ scaleY: 0, transition: { duration: 0.8, ease: EASE } }}
             exit={{ scaleY: 0 }}

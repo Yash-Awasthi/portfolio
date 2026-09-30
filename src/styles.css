@@ -4,12 +4,12 @@
 
 /* Shape rule: interactive controls are pills, media and panels are square. */
 @theme {
-  --color-paper: #f3f3f1;
-  --color-surface: #fbfbfa;
-  --color-ink: #121214;
-  --color-muted: #5e5f66;
-  --color-line: #d9d9d6;
-  --color-accent: #2a45e8;
+  --color-paper: #eaf0f1;
+  --color-surface: #f4f7f7;
+  --color-ink: #141a1f;
+  --color-muted: #52606a;
+  --color-line: #cfd8db;
+  --color-accent: #3d5bd9;
   --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
