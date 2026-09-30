@@ -27,6 +27,7 @@ export default [
         ResizeObserver: 'readonly',
         fetch: 'readonly',
         performance: 'readonly',
+        navigator: 'readonly',
       },
     },
     plugins: {

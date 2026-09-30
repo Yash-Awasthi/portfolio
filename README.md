@@ -1,45 +1,35 @@
 # Portfolio
 
-Personal portfolio site built with React, Vite, and Tailwind CSS.
-
-## Prerequisites
-
-- Node.js 18 or later
-- npm
-
-## Install
-
-```
-npm install
-```
+Personal site for Yash Vaibhav Awasthi. React 19, Vite, Tailwind CSS 4, React Three Fiber and drei
+for the 3D layer, Motion for transitions and Lenis for scrolling.
 
 ## Develop
 
-Starts a local dev server with hot reload.
+Node.js 20 or later.
 
 ```
-npm run dev
+npm install
+npm run dev       # local dev server
+npm run build     # production build in dist/
+npm run preview   # serve the build
+npm run lint
 ```
 
-## Build
+## Where things live
 
-Produces a production build in `dist/`.
+| Path | Holds |
+| --- | --- |
+| `src/data.js` | Every piece of copy: projects, journey, experience, certifications, links |
+| `src/pages/` | Home, project detail (`/work/:slug`) and 404 |
+| `src/three/` | The shared canvas, the per-project 3D objects and the journey path |
+| `src/components/` | Navigation and the motion primitives |
+| `public/work/` | Real project screenshots only |
+| `public/Yash-Vaibhav-Awasthi-Resume.pdf` | Built from the master CV (`Desktop/cv/portfolio-cv`) |
+| `design/` | Design system notes and captured screens |
 
-```
-npm run build
-```
+To add a project, append an entry to `PROJECTS` in `src/data.js` and pick one of the shapes in
+`src/three/Artifacts.jsx`. The home list, the detail page and the next-project link pick it up.
 
-## Preview
+## Deploy
 
-Serves the production build locally, useful for checking the build before deploy.
-
-```
-npm run preview
-```
-
-## Project structure
-
-- `src/sections` — page sections (Hero, About, Projects, Journey, Skills, Contact)
-- `src/components` — shared UI (Nav, BottomDock, HeroScene)
-- `src/constants` — site-wide constants such as email and social links
-- `public` — static assets served as-is
+Vercel, with `vercel.json` rewriting every path to `index.html` so project URLs load directly.

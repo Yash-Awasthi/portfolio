@@ -1,57 +1,44 @@
-import { useState, useEffect } from 'react';
-import ParticleBackground from './components/ParticleBackground';
-import Hero from './sections/Hero';
-import About from './sections/About';
-import Skills from './sections/Skills';
-import Projects from './sections/Projects';
-import Journey from './sections/Journey';
-import Contact from './sections/Contact';
-import BottomDock from './components/BottomDock';
-
-/* ── Scroll reveal observer ─────────────────────────────────────────────── */
-function useScrollReveal() {
-  useEffect(() => {
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
-      }),
-      { threshold: 0.12 }
-    );
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-}
+import { Routes, Route, useLocation } from 'react-router';
+import { AnimatePresence, useReducedMotion } from 'motion/react';
+import { ReactLenis } from 'lenis/react';
+import { Stage } from './three/Stage';
+import { Nav } from './components/Nav';
+import { useScrollTo } from './lib/lenis';
+import Home from './pages/Home';
+import Project from './pages/Project';
+import NotFound from './pages/NotFound';
 
 export default function App() {
-  const [active, setActive] = useState('home');
+  const reduce = useReducedMotion();
+  return reduce ? (
+    <Site />
+  ) : (
+    <ReactLenis root options={{ lerp: 0.1 }}>
+      <Site />
+    </ReactLenis>
+  );
+}
 
-  useScrollReveal();
-
-
-  /* Section active tracking */
-  useEffect(() => {
-    const ids = ['home','about','projects','journey','contact'];
-    const io  = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) setActive(e.target.id); }),
-      { rootMargin: '-40% 0px -40% 0px' }
-    );
-    ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
-    return () => io.disconnect();
-  }, []);
+function Site() {
+  const location = useLocation();
+  const scrollTo = useScrollTo();
+  const toTop = () => !window.location.hash && scrollTo('top', true);
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <ParticleBackground />
-      {/* Sections */}
-      <section id="home">    <Hero />     </section>
-      <section id="about">   <About />    </section>
-                             <Skills />
-      <section id="projects"><Projects /> </section>
-      <section id="journey"> <Journey />  </section>
-                             <Contact />
-
-      {/* Dock */}
-      <BottomDock active={active} />
-    </div>
+    <>
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-ink focus:px-4 focus:py-2 focus:text-paper">
+        Skip to content
+      </a>
+      <Stage />
+      <Nav />
+      <AnimatePresence mode="wait" onExitComplete={toTop}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Home />} />
+          <Route path="/work/:slug" element={<Project />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AnimatePresence>
+      <div className="grain" aria-hidden />
+    </>
   );
 }

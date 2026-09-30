@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#000"/>
-  <text x="4" y="24" font-family="monospace" font-size="20" font-weight="bold" fill="#FFD700">Y</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#121214"/><circle cx="44" cy="20" r="7" fill="#2a45e8"/><text x="10" y="50" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="600" fill="#f3f3f1" letter-spacing="-1">YA</text></svg>
