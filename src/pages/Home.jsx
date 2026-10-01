@@ -65,14 +65,14 @@ function Hero() {
       className="relative mx-auto grid min-h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-24 pb-10 md:px-8"
     >
       <motion.div
-        className="pointer-events-none absolute inset-x-0 top-[10%] h-[48%] md:inset-auto md:right-4 md:top-16 md:h-[64%] md:w-[44%]"
+        className="pointer-events-none relative h-[40vh] md:absolute md:inset-auto md:right-4 md:top-16 md:h-[64%] md:w-[44%]"
         style={reduce ? undefined : { y: orbY, scale: orbScale }}
       >
         <Scene className="h-full w-full" radius={2.4}>
           <HeroBlob />
         </Scene>
       </motion.div>
-      <div />
+      <div className="hidden md:block" />
       <motion.div
         className="relative grid gap-10 md:grid-cols-12 md:items-end"
         style={reduce ? undefined : { y: nameY, opacity: fade }}
