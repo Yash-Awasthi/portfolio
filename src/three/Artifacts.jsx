@@ -273,6 +273,27 @@ function Handset({ screen = COBALT, screenRef, ...props }) {
   );
 }
 
+// Children draw on the screen, in the lid's frame: x in -1.02..1.02, y in 0.075..1.375, z 0.036.
+function Laptop({ lidRef, still, children }) {
+  return (
+    <>
+      <RoundedBox args={[2.2, 0.08, 1.5]} radius={0.03} smoothness={4}>
+        <Clay />
+      </RoundedBox>
+      <group ref={lidRef} position={[0, 0.04, -0.75]} rotation={[still ? -0.28 : Math.PI / 2, 0, 0]}>
+        <RoundedBox args={[2.2, 1.45, 0.06]} radius={0.03} smoothness={4} position={[0, 0.725, 0]}>
+          <Clay />
+        </RoundedBox>
+        <mesh position={[0, 0.725, 0.032]}>
+          <planeGeometry args={[2.04, 1.3]} />
+          <meshPhysicalMaterial color={INK} roughness={0.3} clearcoat={1} />
+        </mesh>
+        {children}
+      </group>
+    </>
+  );
+}
+
 // PocketDesk: the laptop lid opens, the phone turns to face it, commands travel across and the
 // terminal on screen fills line by line.
 const LINES = [0.9, 0.6, 1.1, 0.75, 0.5];
@@ -314,24 +335,14 @@ function Desk({ still, color, delay }) {
   });
   return (
     <group rotation={[0.32, -0.55, 0]} position={[-0.45, -0.1, 0]} scale={0.82}>
-      <RoundedBox args={[2.2, 0.08, 1.5]} radius={0.03} smoothness={4}>
-        <Clay />
-      </RoundedBox>
-      <group ref={lid} position={[0, 0.04, -0.75]} rotation={[still ? -0.28 : Math.PI / 2, 0, 0]}>
-        <RoundedBox args={[2.2, 1.45, 0.06]} radius={0.03} smoothness={4} position={[0, 0.725, 0]}>
-          <Clay />
-        </RoundedBox>
-        <mesh position={[0, 0.725, 0.032]}>
-          <planeGeometry args={[2.04, 1.3]} />
-          <meshPhysicalMaterial color={INK} roughness={0.3} clearcoat={1} />
-        </mesh>
+      <Laptop lidRef={lid} still={still}>
         {LINES.map((w, i) => (
           <mesh key={i} ref={(m) => (lines.current[i] = m)} position={[-0.95, 1.2 - i * 0.2, 0.036]}>
             <planeGeometry args={[w, 0.07]} />
             <meshBasicMaterial color={i % 2 ? '#8fb3c9' : color} toneMapped={false} />
           </mesh>
         ))}
-      </group>
+      </Laptop>
       <group ref={phone} position={[1.85, 0.05, 1.0]}>
         <Handset scale={0.62} screen={color} />
       </group>
@@ -537,113 +548,226 @@ function KeyBody({ mat }) {
   );
 }
 
-// Key Router: the real provider key slides into the worker and stays there; a disposable gateway
-// key slides out the other side. Requests cross the worker and change colour as the real key is
-// swapped in, replies stream back, the TTL dial drains, and the expired key turns and retracts.
+// Key Router: a Claude Code session on the laptop holds a disposable gateway key. Its requests go
+// to the Cloudflare edge, which swaps in the real key and calls the provider; replies stream back
+// into the terminal. The edge's TTL dial drains, and the expired key turns and drops away.
 const TICKS = 24;
 const TICK_OFF = new THREE.Color('#cfd8db');
-const keyArc = (a, b, h) =>
-  new THREE.QuadraticBezierCurve3(new THREE.Vector3(...a), new THREE.Vector3((a[0] + b[0]) / 2, h, 0.35), new THREE.Vector3(...b));
+const arc = (a, b, lift) =>
+  new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(...a),
+    new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + lift, (a[2] + b[2]) / 2 + 0.2),
+    new THREE.Vector3(...b),
+  );
 
-function KeyGate({ still, color, delay }) {
+const PUFFS = [
+  [0, 0, 0, 0.42],
+  [-0.42, -0.1, 0, 0.3],
+  [0.43, -0.08, 0, 0.32],
+  [-0.2, 0.24, 0, 0.3],
+  [0.22, 0.26, 0.05, 0.28],
+  [0, -0.16, 0.15, 0.3],
+];
+// Edge locations: dots on the cloud's front surface that no other puff covers.
+const EDGE_DOTS = (() => {
+  const out = [];
+  PUFFS.forEach(([x, y, z, r], k) => {
+    const n = 90;
+    for (let i = 0; i < n; i++) {
+      const v = 1 - (i / (n - 1)) * 2;
+      const rr = Math.sqrt(1 - v * v);
+      const a = i * 2.399963;
+      const p = [x + Math.cos(a) * rr * r * 1.02, y + v * r * 1.02, z + Math.sin(a) * rr * r * 1.02];
+      const covered = PUFFS.some(([ox, oy, oz, or], j) => j !== k && Math.hypot(p[0] - ox, p[1] - oy, p[2] - oz) < or);
+      const onDial = Math.hypot(p[0], p[1] - 0.02) < 0.3 && p[2] > 0.3;
+      if (!covered && !onDial && p[2] > z && (i * 7) % 5 < 1) out.push(p);
+    }
+  });
+  return out;
+})();
+
+// Claude Code's welcome box, drawn as four hairlines on the screen.
+const BOX = [
+  [0, 1.29, 1.8, 0.012],
+  [0, 1.03, 1.8, 0.012],
+  [-0.9, 1.16, 0.012, 0.27],
+  [0.9, 1.16, 0.012, 0.27],
+];
+const REPLY = [1.3, 0.9, 1.5, 0.7];
+
+function Edge({ still, color, delay }) {
   const clock = useClock(delay);
-  const real = useRef();
+  const lid = useRef();
+  const star = useRef();
+  const lines = useRef([]);
   const gate = useRef();
+  const real = useRef();
   const ticks = useRef([]);
-  const asks = useRef();
-  const replies = useRef();
+  const out = useRef();
+  const back = useRef();
   const lit = useMemo(() => new THREE.Color(color), [color]);
   const paths = useMemo(
     () => ({
-      inbound: keyArc([1.75, 0.2, 0.3], [0, 0.62, 0.2], 0.9),
-      outbound: keyArc([0, 0.62, 0.2], [-1.75, 0.2, 0.3], 0.9),
-      back: keyArc([-1.75, -0.25, 0.3], [1.75, -0.25, 0.3], -0.95),
+      toEdge: arc([-0.15, 0.72, 0.3], [-0.05, 0.8, 0.4], 0.35),
+      toModel: arc([1.0, 0.2, 0.25], [1.15, -0.08, 0.25], 0.25),
+      fromModel: arc([1.15, -0.4, 0.3], [0.6, 0.35, 0.4], -0.3),
+      fromEdge: arc([0.0, 0.3, 0.45], [-0.8, 0.1, 0.4], -0.4),
     }),
     [],
   );
-  useFrame((state) => {
+  useFrame((state, dt) => {
     const t = still ? 0 : clock(state);
-    if (real.current) real.current.position.x = lerp(-2.1, -1.36, still ? 1 : easeOut(span(t, 0, 1.1)));
-    const p = still ? 0.4 : t > 1 ? ((t - 1) % 9) / 9 : 0;
+    if (lid.current) lid.current.rotation.x = still ? -0.28 : lerp(Math.PI / 2, -0.28, easeInOut(span(t, 0.1, 1.2)));
+    if (real.current) real.current.position.x = still ? 0 : lerp(-0.45, 0, easeOut(span(t, 0.3, 1.3)));
+    const p = still ? 0.62 : t > 1.4 ? ((t - 1.4) % 9) / 9 : 0;
+    const busy = p > 0.12 && p < 0.7;
+    if (star.current && !still) star.current.rotation.z -= dt * (busy ? 4 : 0.6);
     if (gate.current) {
-      const out = easeOut(span(p, 0, 0.12)) * (1 - easeInOut(span(p, 0.86, 0.97)));
-      gate.current.position.x = lerp(0.05, 1.36, out);
-      // Edge-on while inside the worker, so the loop joins without a jump.
-      gate.current.rotation.x = (Math.PI / 2) * Math.max(1 - easeOut(span(p, 0, 0.12)), easeInOut(span(p, 0.8, 0.88)));
+      const up = easeOut(span(p, 0, 0.1)) * (1 - easeInOut(span(p, 0.88, 0.97)));
+      gate.current.position.y = lerp(0.05, 0.62, up);
+      gate.current.rotation.x = (Math.PI / 2) * Math.max(1 - up, easeInOut(span(p, 0.82, 0.88)));
     }
-    const left = TICKS * Math.min(span(p, 0.02, 0.14), 1 - span(p, 0.16, 0.8));
+    const left = TICKS * Math.min(span(p, 0.02, 0.12), 1 - span(p, 0.14, 0.82));
     ticks.current.forEach((m, i) => m?.color.copy(TICK_OFF).lerp(lit, THREE.MathUtils.clamp(left - i, 0, 1)));
-    // Each request is two beads: the gateway key's colour up to the worker, chrome after the swap.
-    asks.current?.children.forEach((pair, i) => {
-      const k = span(p, 0.2 + i * 0.05, 0.44 + i * 0.05);
-      const [before, after] = pair.children;
-      const first = k < 0.5;
-      before.position.copy(paths.inbound.getPointAt(easeInOut(Math.min(1, k * 2))));
-      after.position.copy(paths.outbound.getPointAt(easeInOut(Math.max(0, k * 2 - 1))));
-      before.visible = !still && k > 0 && first;
-      after.visible = !still && !first && k < 1;
-    });
-    replies.current?.children.forEach((b, i) => {
-      const k = span(p, 0.46 + i * 0.03, 0.66 + i * 0.03);
-      b.position.copy(paths.back.getPointAt(easeInOut(k)));
-      b.visible = !still && k > 0 && k < 1;
+    const move = (group, path, a, gap, len) =>
+      group?.children.forEach((b, i) => {
+        const k = span(p, a + i * gap, a + i * gap + len);
+        b.position.copy(path.getPointAt(easeInOut(k)));
+        b.visible = !still && k > 0 && k < 1;
+      });
+    move(out.current?.children[0], paths.toEdge, 0.12, 0.04, 0.14);
+    move(out.current?.children[1], paths.toModel, 0.26, 0.04, 0.14);
+    move(back.current?.children[0], paths.fromModel, 0.42, 0.025, 0.12);
+    move(back.current?.children[1], paths.fromEdge, 0.52, 0.025, 0.14);
+    lines.current.forEach((m, i) => {
+      if (!m) return;
+      const grow = still ? 1 : easeOut(span(p, 0.58 + i * 0.04, 0.68 + i * 0.04)) * (1 - span(p, 0.93, 1));
+      m.scale.x = Math.max(0.001, grow);
+      m.position.x = -0.82 + (REPLY[i] * m.scale.x) / 2;
     });
   });
   return (
-    <group rotation={[0.28, -0.42, 0]} scale={0.95}>
-      <RoundedBox args={[0.62, 0.95, 0.62]} radius={0.06} smoothness={4}>
-        <Clay />
-      </RoundedBox>
-      {[-1, 1].map((s) => (
-        <mesh key={s} position={[s * 0.312, 0, 0]}>
-          <boxGeometry args={[0.012, 0.3, 0.14]} />
-          <meshBasicMaterial color={INK} />
-        </mesh>
-      ))}
-      {Array.from({ length: TICKS }, (_, i) => {
-        const a = Math.PI / 2 - (i / TICKS) * Math.PI * 2;
-        return (
-          <mesh key={i} position={[Math.cos(a) * 0.2, Math.sin(a) * 0.2, 0.313]} rotation={[0, 0, a]}>
-            <boxGeometry args={[0.06, 0.018, 0.006]} />
-            <meshBasicMaterial ref={(m) => (ticks.current[i] = m)} color={color} toneMapped={false} />
+    <group rotation={[0.18, -0.25, 0]} position={[0.05, -0.2, 0]} scale={0.92}>
+      <group position={[-0.8, -0.6, 0.15]} rotation={[0, 0.45, 0]} scale={0.6}>
+        <Laptop lidRef={lid} still={still}>
+          {BOX.map(([x, y, w, h], i) => (
+            <mesh key={i} position={[x, y, 0.036]}>
+              <planeGeometry args={[w, h]} />
+              <meshBasicMaterial color={color} toneMapped={false} />
+            </mesh>
+          ))}
+          <group ref={star} position={[-0.72, 1.16, 0.037]}>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <mesh key={i} rotation={[0, 0, (i * Math.PI) / 6]}>
+                <planeGeometry args={[0.22, 0.032]} />
+                <meshBasicMaterial color={color} toneMapped={false} />
+              </mesh>
+            ))}
+          </group>
+          <mesh position={[-0.15, 1.16, 0.036]}>
+            <planeGeometry args={[0.9, 0.06]} />
+            <meshBasicMaterial color="#8fb3c9" toneMapped={false} />
           </mesh>
-        );
-      })}
-      <group ref={real} position={[-1.36, 0, 0]}>
-        <KeyBody mat={() => <Chrome />} />
+          <mesh position={[-0.9, 0.86, 0.036]} rotation={[0, 0, Math.PI / 4]}>
+            <planeGeometry args={[0.07, 0.07]} />
+            <meshBasicMaterial color={color} toneMapped={false} />
+          </mesh>
+          {REPLY.map((w, i) => (
+            <mesh key={i} ref={(m) => (lines.current[i] = m)} position={[-0.82, 0.86 - i * 0.17, 0.036]}>
+              <planeGeometry args={[w, 0.06]} />
+              <meshBasicMaterial color={i ? '#8fb3c9' : '#dfe6f1'} toneMapped={false} />
+            </mesh>
+          ))}
+        </Laptop>
       </group>
-      <group ref={gate} position={[1.36, 0, 0]}>
-        <group rotation={[0, 0, Math.PI]}>
+
+      <group ref={gate} position={[-0.65, 0.62, 0.3]}>
+        <group rotation={[0, 0, 0.25]} scale={0.42}>
           <KeyBody mat={() => <Accent color={color} />} />
         </group>
       </group>
-      <group ref={asks}>
-        {[0, 1, 2].map((i) => (
-          <group key={i}>
-            <mesh scale={0.055}>
-              <sphereGeometry args={[1, 20, 20]} />
-              <Accent color={color} />
+
+      <group position={[0.35, 0.62, 0]}>
+        {PUFFS.map(([x, y, z, r], i) => (
+          <mesh key={i} position={[x, y, z]} scale={r}>
+            <sphereGeometry args={[1, 48, 48]} />
+            <Clay />
+          </mesh>
+        ))}
+        <Instances limit={EDGE_DOTS.length}>
+          <sphereGeometry args={[0.018, 8, 8]} />
+          <Accent color={color} />
+          {EDGE_DOTS.map((d, i) => (
+            <Instance key={i} position={d} />
+          ))}
+        </Instances>
+        {Array.from({ length: TICKS }, (_, i) => {
+          const a = Math.PI / 2 - (i / TICKS) * Math.PI * 2;
+          return (
+            <mesh key={i} position={[Math.cos(a) * 0.17, 0.02 + Math.sin(a) * 0.17, 0.47]} rotation={[0, 0, a]}>
+              <boxGeometry args={[0.05, 0.016, 0.006]} />
+              <meshBasicMaterial ref={(m) => (ticks.current[i] = m)} color={color} toneMapped={false} />
             </mesh>
-            <mesh scale={0.055}>
-              <sphereGeometry args={[1, 20, 20]} />
+          );
+        })}
+        <group position={[0.4, -0.18, 0.05]} rotation={[0, 0, -0.62]}>
+          <group ref={real}>
+            <group scale={0.55}>
+              <KeyBody mat={() => <Chrome />} />
+            </group>
+          </group>
+        </group>
+      </group>
+
+      <group position={[1.15, -0.5, 0]} rotation={[0, -0.35, 0]}>
+        {[0, 1, 2].map((i) => (
+          <group key={i} position={[0, i * 0.17, 0]}>
+            <RoundedBox args={[0.6, 0.14, 0.46]} radius={0.03} smoothness={3}>
               <Chrome />
+            </RoundedBox>
+            <mesh position={[0.2, 0, 0.232]}>
+              <boxGeometry args={[0.1, 0.025, 0.004]} />
+              <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
           </group>
         ))}
       </group>
-      <group ref={replies}>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <mesh key={i} scale={0.035}>
-            <sphereGeometry args={[1, 16, 16]} />
-            <Accent color={color} />
-          </mesh>
+
+      <group ref={out}>
+        {[
+          (i) => <Accent key={i} color={color} />,
+          (i) => <Chrome key={i} />,
+        ].map((mat, g) => (
+          <group key={g}>
+            {[0, 1, 2].map((i) => (
+              <mesh key={i} scale={0.045}>
+                <sphereGeometry args={[1, 16, 16]} />
+                {mat(i)}
+              </mesh>
+            ))}
+          </group>
+        ))}
+      </group>
+      <group ref={back}>
+        {[
+          (i) => <Chrome key={i} />,
+          (i) => <Accent key={i} color={color} />,
+        ].map((mat, g) => (
+          <group key={g}>
+            {[0, 1, 2, 3, 4].map((i) => (
+              <mesh key={i} scale={0.03}>
+                <sphereGeometry args={[1, 12, 12]} />
+                {mat(i)}
+              </mesh>
+            ))}
+          </group>
         ))}
       </group>
     </group>
   );
 }
 
-const SHAPES = { council: Council, globe: Globe, rings: Rings, phone: Desk, files: Files, pair: Pair, chip: Chip, key: KeyGate };
+const SHAPES = { council: Council, globe: Globe, rings: Rings, phone: Desk, files: Files, pair: Pair, chip: Chip, key: Edge };
 
 // Turntable swap that never leaves the frame: the current object turns edge-on, the next turns
 // in from the other side and replays its entrance.
