@@ -536,47 +536,101 @@ function Laptop({ lidRef, still, children }) {
   );
 }
 
-// PocketDesk: the laptop lid opens, the phone turns to face it, commands travel across and the
-// terminal on screen fills line by line.
+// PocketDesk: the phone sends commands to the PC through a QUIC relay, the agent's terminal types
+// them out, its permission prompt comes back to the phone as a diff card and is approved, then the
+// desktop streams to the phone one frame group at a time.
 const LINES = [0.9, 0.6, 1.1, 0.75, 0.5];
+const PHONE_AT = [1.85, 0.05, 1.0];
+const RELAY_AT = [2.0, 1.5, 0.45];
+const SCREEN_AT = [0.25, 0.8, -0.5];
+const FRAMES = 4;
+const FRAME_TINT = ['#2b3440', '#34404c', '#2b3440', '#34404c'];
+
+const deskInit = () => ({
+  lid: 0,
+  turn: 0,
+  cmds: [0, 1, 2].map(() => ({ k: 0 })),
+  type: 0,
+  diff: 0,
+  ok: 0,
+  frames: Array.from({ length: FRAMES }, () => ({ k: 0 })),
+  view: 0,
+});
+
+function deskStory({ intro, loop }, s) {
+  intro.add(s, { lid: [0, 1], duration: 1400 }).add(s, { turn: [0, 1], duration: 900, ease: OUT }, 500);
+  s.cmds.forEach((c, i) => loop.add(c, { k: [0, 1], duration: 1100 }, i * 160));
+  loop
+    .add(s, { type: [0, 1], duration: 1300, ease: 'linear' }, 1200)
+    .add(s, { diff: [0, 1], duration: 1000 }, 2700)
+    .add(s, { ok: [0, 1], duration: 250, ease: OUT }, 3800)
+    .add(s, { ok: 0, duration: 450 }, 4100);
+  s.frames.forEach((f, i) => loop.add(f, { k: [0, 1], duration: 1100, ease: 'linear' }, 4500 + i * 280));
+  loop
+    .add(s, { view: [0, 1], duration: 400 }, 5500)
+    .add(s, { view: 0, duration: 400 }, 7600)
+    .add(s, { type: 0, duration: 400 }, 7000)
+    .add(s, { diff: 0, duration: 1 }, 7000)
+    .add(s.frames, { k: 0, duration: 1 }, 7400)
+    .add(s, { view: 0, duration: 1 }, 8100);
+}
+
+const SCREEN_IDLE_DESK = new THREE.Color('#eef3f3');
+const SCREEN_STREAM = new THREE.Color('#2b3440');
 
 function Desk({ still, color, delay }) {
-  const clock = useClock(delay);
+  const s = useStory(deskInit, deskStory, { delay, still, at: 0.55 });
   const lid = useRef();
   const phone = useRef();
-  const beads = useRef();
+  const screen = useRef();
+  const relay = useRef();
+  const cmds = useRef([]);
   const lines = useRef([]);
-  const arc = useMemo(
-    () =>
-      new THREE.QuadraticBezierCurve3(
-        new THREE.Vector3(1.8, 0.2, 1.05),
-        new THREE.Vector3(1.2, 1.4, 0.5),
-        new THREE.Vector3(0.1, 0.7, -0.6),
-      ),
-    [],
-  );
-  useFrame((state) => {
-    const t = still ? 10 : clock(state);
-    if (lid.current) lid.current.rotation.x = lerp(Math.PI / 2, -0.28, easeInOut(span(t, 0.1, 1.5)));
-    const p = t < 2 ? 0 : ((t - 2) % 7) / 7;
+  const diff = useRef();
+  const frames = useRef([]);
+  const lit = useMemo(() => new THREE.Color(color), [color]);
+  const paths = useMemo(() => {
+    const v = (a) => new THREE.Vector3(...a);
+    return {
+      up: new THREE.CatmullRomCurve3([v([PHONE_AT[0], 0.5, PHONE_AT[2]]), v(RELAY_AT), v(SCREEN_AT)]),
+      down: new THREE.CatmullRomCurve3([v(SCREEN_AT), v(RELAY_AT), v([PHONE_AT[0], 0.35, PHONE_AT[2] + 0.1])]),
+    };
+  }, []);
+  useFrame((state, dt) => {
+    if (lid.current) lid.current.rotation.x = lerp(Math.PI / 2, -0.28, s.lid);
     if (phone.current) {
-      phone.current.rotation.y = 0.4 + easeInOut(span(p, 0, 0.18)) * Math.PI * 2;
-      phone.current.position.y = 0.05 + (still ? 0 : Math.sin(t * 1.3) * 0.05);
+      phone.current.rotation.y = lerp(1.6, 0.4, s.turn);
+      phone.current.position.y = PHONE_AT[1] + (still ? 0 : Math.sin(state.clock.elapsedTime * 1.3) * 0.04);
     }
-    beads.current?.children.forEach((b, i) => {
-      const k = span(p, 0.2 + i * 0.04, 0.48 + i * 0.04);
-      b.position.copy(arc.getPointAt(easeInOut(k)));
-      b.visible = !still && k > 0 && k < 1;
+    if (relay.current) relay.current.rotation.z += dt * 0.8;
+    cmds.current.forEach((m, i) => {
+      if (!m) return;
+      const k = s.cmds[i].k;
+      m.position.copy(paths.up.getPointAt(k));
+      m.visible = k > 0.01 && k < 0.99;
     });
     lines.current.forEach((m, i) => {
       if (!m) return;
-      const grow = still ? 1 : easeOut(span(p, 0.5 + i * 0.06, 0.62 + i * 0.06)) * (1 - span(p, 0.94, 1));
+      const grow = THREE.MathUtils.clamp(s.type * LINES.length - i, 0, 1);
       m.scale.x = Math.max(0.001, grow);
       m.position.x = -0.95 + (LINES[i] * m.scale.x) / 2;
     });
+    if (diff.current) {
+      diff.current.position.copy(paths.down.getPointAt(s.diff));
+      diff.current.rotation.set(0, lerp(0, 0.4, s.diff), 0);
+      diff.current.visible = s.diff > 0.01 && s.diff < 0.99;
+    }
+    frames.current.forEach((m, i) => {
+      if (!m) return;
+      const k = s.frames[i].k;
+      m.position.copy(paths.down.getPointAt(k));
+      m.rotation.set(0, lerp(0, 0.4, k), 0);
+      m.visible = k > 0.01 && k < 0.99;
+    });
+    screen.current?.color.copy(SCREEN_IDLE_DESK).lerp(SCREEN_STREAM, s.view).lerp(lit, s.ok);
   });
   return (
-    <group rotation={[0.32, -0.55, 0]} position={[-0.45, -0.1, 0]} scale={0.82}>
+    <group rotation={[0.32, -0.55, 0]} position={[-0.45, -0.2, 0]} scale={0.8}>
       <Laptop lidRef={lid} still={still}>
         {LINES.map((w, i) => (
           <mesh key={i} ref={(m) => (lines.current[i] = m)} position={[-0.95, 1.2 - i * 0.2, 0.036]}>
@@ -585,17 +639,47 @@ function Desk({ still, color, delay }) {
           </mesh>
         ))}
       </Laptop>
-      <group ref={phone} position={[1.85, 0.05, 1.0]}>
-        <Handset scale={0.62} screen={color} />
+      <group ref={phone} position={PHONE_AT}>
+        <Handset scale={0.62} screen="#eef3f3" screenRef={screen} />
       </group>
-      <group ref={beads}>
-        {[0, 1, 2].map((i) => (
-          <mesh key={i} scale={0.05}>
-            <sphereGeometry args={[1, 16, 16]} />
-            <Accent color={color} />
+      <group position={RELAY_AT}>
+        <mesh ref={relay}>
+          <torusGeometry args={[0.16, 0.022, 12, 48]} />
+          <Chrome />
+        </mesh>
+        <mesh scale={0.06}>
+          <sphereGeometry args={[1, 20, 20]} />
+          <Accent color={color} />
+        </mesh>
+      </group>
+      {[0, 1, 2].map((i) => (
+        <mesh key={i} ref={(m) => (cmds.current[i] = m)} scale={0.05}>
+          <sphereGeometry args={[1, 16, 16]} />
+          <Accent color={color} />
+        </mesh>
+      ))}
+      <group ref={diff}>
+        <RoundedBox args={[0.42, 0.3, 0.015]} radius={0.012} smoothness={2}>
+          <Clay />
+        </RoundedBox>
+        {[0, 1, 2].map((r) => (
+          <mesh key={r} position={[-0.02, 0.07 - r * 0.07, 0.009]}>
+            <planeGeometry args={[0.3 - r * 0.05, 0.03]} />
+            <meshBasicMaterial color={r === 1 ? color : r === 2 ? '#8fb3c9' : INK} toneMapped={false} />
           </mesh>
         ))}
       </group>
+      {Array.from({ length: FRAMES }, (_, i) => (
+        <group key={i} ref={(g) => (frames.current[i] = g)}>
+          <RoundedBox args={[0.46, 0.3, 0.012]} radius={0.01} smoothness={2}>
+            <meshPhysicalMaterial color={FRAME_TINT[i]} roughness={0.3} clearcoat={1} />
+          </RoundedBox>
+          <mesh position={[-0.1 + i * 0.05, 0.03, 0.008]}>
+            <planeGeometry args={[0.14, 0.09]} />
+            <meshBasicMaterial color={color} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
 }
