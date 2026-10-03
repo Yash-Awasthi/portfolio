@@ -820,7 +820,7 @@ function Victory({ s, mirror }) {
   return (
     <group position={[0, 0.27, 0]} scale={[mirror ? -1 : 1, 1, 1]}>
       <group ref={ref} rotation={[0, 0, -0.1]}>
-        <group rotation={[0, -Math.PI / 2, 0]}>
+        <group rotation={[0, Math.PI / 2, 0]}>
           <primitive object={hand} />
         </group>
       </group>
@@ -882,7 +882,7 @@ function Pair({ still, color, delay }) {
             ))}
           </group>
           <group position={[side * 0.95, 1.25, 0.1]} scale={1.0}>
-            <Victory s={s} mirror={side > 0} />
+            <Victory s={s} mirror={side < 0} />
           </group>
           <mesh position={[side * 0.95, 1.52, -0.3]}>
             <torusGeometry args={[0.62, 0.012, 8, 96]} />
@@ -1159,7 +1159,12 @@ export function SwapArtifact({ shape, color, still }) {
   const ref = useRef();
   const leaving = useRef(null);
   const arrived = useRef(null);
+  const [warm, setWarm] = useState(0);
+  const others = Object.keys(SHAPES).filter((k) => k !== shown.shape);
   useFrame((state) => {
+    // Each other shape draws for a few frames at near-zero size, one at a time, so its shaders
+    // compile before the first hover rather than during a swap.
+    if (warm < others.length * 3) setWarm(warm + 1);
     const g = ref.current;
     if (!g) return;
     const now = state.clock.elapsedTime;
@@ -1185,6 +1190,11 @@ export function SwapArtifact({ shape, color, still }) {
   return (
     <group ref={ref}>
       <Artifact key={shown.shape} shape={shown.shape} color={shown.color} still={still} />
+      {others[Math.floor(warm / 3)] && (
+        <group key={others[Math.floor(warm / 3)]} scale={0.001}>
+          <Artifact shape={others[Math.floor(warm / 3)]} color={color} still />
+        </group>
+      )}
     </group>
   );
 }
