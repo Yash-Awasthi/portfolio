@@ -66,7 +66,7 @@ Interactive controls are pills. Media, panels and grids are square. Hairlines in
 | Pinned scroll with 3D path | Journey | One milestone at a time, path fills in cobalt |
 | Curtain between routes | Page change | Ink rises on exit; the destination's colour lifts off on enter |
 | Section wash | Background | Each section carries its own cool pastel |
-| Hero parallax | Hero | Name drifts up and fades, the 3D form sinks and shrinks |
+| Hero parallax | Hero | Name drifts up and fades, the orrery sinks and shrinks |
 | Scroll-driven stack band | Below statement | Two rows slide opposite ways with the scroll |
 | Progress line | Top edge | Teal to indigo line tracking page scroll |
 | Screenshot zoom | Project page | Grows from 88% as it reaches centre |
@@ -86,16 +86,20 @@ Each object loops a short story of what the project does. Entrances use ease-out
 (`src/three/ease.js`, checked by `node src/three/ease.check.mjs`). Nothing appears by scaling from
 zero or fading; things move into place. On project pages the entrance waits 0.9 s for the wipe.
 
+Stories are anime.js timelines over a plain object that the frame loop reads (`useStory` in
+`src/three/story.js`): an entrance plays once, then the story loops. A frozen copy, used for the
+orrery's miniatures under reduced motion, holds the loop at one chosen moment.
+
 | Project | Object | Motion |
 | --- | --- | --- |
-| Hero | Liquid chrome form, three orbiting spheres | Surface ripples, spheres orbit, tilts to the pointer |
-| Nexus | Faceted core, six model nodes on a ring | Nodes slide out along spokes; pulses go out and back; a debate bead circles |
-| WorldFin | Clay globe dotted with events, chrome ring | Ring swings into orbit; event pillars rise and settle as the globe turns |
-| AdapFit | Three rings | Drift apart, then settle concentric |
-| PocketDesk | Laptop (shared with Key Router) and phone | Lid opens on its hinge; phone turns; commands arc to the screen; terminal lines type out |
-| Case Files | Stack of files | Fans open, top file slides out, closes |
-| Ping | Two phones | Turn toward each other, the card arcs across, both screens confirm, turn back |
-| RISC-V attn | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
+| Hero | Orrery: a nucleus of the eight project colours, each project's object in miniature on a tilted orbit | Orbits turn; pointing at a project stops them, pulls its colour out of the nucleus and names it on the core; clicking opens it |
+| Nexus | Round table, five differently shaped models | A question drops in and splits to every seat; each writes a card; cards turn face down and pass one seat on; debate beads cross the table; cards gather into a verdict gem |
+| WorldFin | Clay globe, chrome orbit with a price line | Headline cards land where the event happened; an arrow rises out for invest or points in for pull out; the price line traces the orbit |
+| AdapFit | HRV trace, recovery gauge, four decision pills | The trace runs into the gauge, the needle settles on that morning's score and its decision lifts; four mornings, one per decision |
+| PocketDesk | Laptop (shared with Key Router), phone, QUIC relay | Commands go through the relay to the terminal, which types; a diff card comes back and is approved; desktop frames stream to the phone, whose screen becomes the desktop |
+| Case Files | Three case files with their own seals, magnifier | An answer slip leaves one file for another; the magnifier reads its seal and a thread runs back to the file it came from |
+| Ping | Two phones, a hand above each | Both hands close into the same V and lock; the six-digit check lights on both screens; the phones turn and the card crosses |
+| RISC-V attn | Four nested loop frames, chip | The loops fold into one attn bar with four operands, which drops into the lifted die; the die seats and signals run out along the traces |
 | Key Router | Laptop running Claude Code, edge cloud, provider stack | Lid opens on a Claude Code session; the gateway key rises from it; requests fly to the cloud in the key's colour and on to the provider in chrome after the swap; replies stream back as terminal lines while the spinner turns; the cloud's TTL dial drains and the key turns edge-on and drops away |
 
 On the home page, switching projects is a turntable: the current object turns edge-on and the

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { motion, useReducedMotion, useScroll, useTransform, useMotionValueEvent, AnimatePresence } from 'motion/react';
 import { ArrowUpRight, ArrowRight, Copy, Check } from '@phosphor-icons/react';
 import { Page, Reveal, Words } from '../components/Motion';
 import { Scene } from '../three/Stage';
-import { HeroBlob, SwapArtifact, Artifact } from '../three/Artifacts';
+import { HeroOrrery, SwapArtifact, Artifact } from '../three/Artifacts';
 import { JourneyPath } from '../three/JourneyPath';
 import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS, COURSES } from '../data';
 import { useScrollTo } from '../lib/lenis';
@@ -50,6 +50,15 @@ export default function Home() {
 function Hero() {
   const reduce = useReducedMotion();
   const scrollTo = useScrollTo();
+  const navigate = useNavigate();
+  const [hovered, setHovered] = useState(null);
+  const named = hovered === null ? null : PROJECTS[hovered];
+  useEffect(() => {
+    document.body.style.cursor = hovered === null ? '' : 'pointer';
+    return () => {
+      document.body.style.cursor = '';
+    };
+  }, [hovered]);
   const ref = useRef();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const nameY = useTransform(scrollYProgress, [0, 1], [0, -140]);
@@ -68,9 +77,24 @@ function Hero() {
         className="pointer-events-none relative h-[40vh] md:absolute md:inset-auto md:right-4 md:top-16 md:h-[64%] md:w-[44%]"
         style={reduce ? undefined : { y: orbY, scale: orbScale }}
       >
-        <Scene className="h-full w-full" radius={2.4}>
-          <HeroBlob />
+        <Scene className="pointer-events-auto h-full w-full" radius={2.4}>
+          <HeroOrrery projects={PROJECTS} hovered={hovered} onHover={setHovered} onPick={(slug) => navigate(`/work/${slug}`)} />
         </Scene>
+        <AnimatePresence>
+          {named && (
+            <motion.span
+              key={named.slug}
+              aria-hidden
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.3, ease: EASE } }}
+              exit={{ opacity: 0, transition: { duration: 0.15 } }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-4 py-1.5 text-[15px] font-medium text-paper shadow-[0_10px_30px_-12px_rgba(20,26,31,0.5)]"
+              style={{ backgroundColor: ink(named.color) }}
+            >
+              {named.name}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </motion.div>
       <div className="hidden md:block" />
       <motion.div
