@@ -65,10 +65,10 @@ function Hero() {
       className="relative mx-auto grid min-h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-24 pb-10 md:px-8"
     >
       <motion.div
-        className="pointer-events-none relative h-[40vh] md:absolute md:inset-auto md:right-4 md:top-16 md:h-[64%] md:w-[44%]"
+        className="pointer-events-none relative h-[40vh] md:absolute md:inset-auto md:right-4 md:top-14 md:h-[56%] md:w-[44%]"
         style={reduce ? undefined : { y: orbY, scale: orbScale }}
       >
-        <Scene className="h-full w-full" radius={2.4}>
+        <Scene className="h-full w-full" radius={3.0}>
           <HeroBlob />
         </Scene>
       </motion.div>
@@ -82,7 +82,7 @@ function Hero() {
           onLoad
           delay={0.55}
           text={PERSON.name}
-          className="display text-[clamp(3.4rem,10.5vw,10.5rem)] md:col-span-9"
+          className="display text-[clamp(3.4rem,8.6vw,10.5rem)] md:col-span-9"
         />
         <Reveal delay={1} className="flex flex-col gap-6 md:col-span-3 md:pb-3">
           <p className="max-w-[34ch] text-[17px] leading-relaxed text-muted">{PERSON.intro}</p>
@@ -150,27 +150,13 @@ const BAND = [
 ];
 const BAND_COLORS = ['#3d5bd9', '#2a8f8a'];
 
-// The page's one marquee: two rows of the stack, pushed sideways by the scroll itself.
+// The page's one marquee: two rows of the stack, pushed sideways by the scroll itself. Scroll-driven,
+// so it stays on under reduced motion; the rows would otherwise wrap and lose the effect.
 function Band() {
   const ref = useRef();
-  const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const left = useTransform(scrollYProgress, [0, 1], ['4%', '-38%']);
   const right = useTransform(scrollYProgress, [0, 1], ['-38%', '4%']);
-  if (reduce) {
-    // Without the sideways drift the rows would sit cut off at the edges, so they wrap instead.
-    return (
-      <section ref={ref} aria-label="Stack" className="mx-auto max-w-[1400px] px-4 py-10 md:px-8 md:py-16">
-        <p className="display flex flex-wrap gap-x-[0.35em] text-[clamp(2.4rem,6vw,5.5rem)] leading-[1.05]">
-          {BAND.flat().map((w, i) => (
-            <span key={w} style={i % 3 === 0 ? { color: BAND_COLORS[i % 2] } : { WebkitTextStroke: '1.2px #141a1f', color: 'transparent' }}>
-              {w}
-            </span>
-          ))}
-        </p>
-      </section>
-    );
-  }
   return (
     <section ref={ref} aria-label="Stack" className="overflow-hidden py-10 md:py-16">
       {BAND.map((row, r) => (
