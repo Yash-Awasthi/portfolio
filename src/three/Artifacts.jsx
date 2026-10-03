@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, RoundedBox, Instances, Instance } from '@react-three/drei';
+import { Float, MeshDistortMaterial, RoundedBox, Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from 'motion/react';
 import { stagger } from 'animejs';
@@ -52,6 +52,36 @@ function Spin({ speed = 0.2, axis = 'y', still, children, ...props }) {
   return (
     <group ref={ref} {...props}>
       {children}
+    </group>
+  );
+}
+
+const HERO_MOONS = ['#3d5bd9', '#2a8f8a', '#5b5fc7'];
+
+// Reduced motion keeps each object's own story but drops pointer tilt, bobbing and the carousel.
+export function HeroBlob({ still }) {
+  const calm = useReducedMotion();
+  const tilt = useTilt(calm ? 0 : 0.5, still);
+  return (
+    <group ref={tilt}>
+      <Float speed={still || calm ? 0 : 1.4} rotationIntensity={0.6} floatIntensity={0.8}>
+        <mesh scale={1.2}>
+          <icosahedronGeometry args={[1, 64]} />
+          <MeshDistortMaterial color="#e4e5ea" metalness={1} roughness={0.08} distort={still ? 0.25 : 0.38} speed={still ? 0 : 1.6} />
+        </mesh>
+      </Float>
+      {HERO_MOONS.map((c, i) => (
+        <Spin key={c} speed={0.5 - i * 0.12} still={still} rotation={[0.5 + i * 0.5, i * 1.9, 0.3 - i * 0.4]}>
+          <mesh position={[1.75 + i * 0.22, 0, 0]} scale={0.17 - i * 0.03}>
+            <sphereGeometry args={[1, 48, 48]} />
+            <Accent color={c} />
+          </mesh>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[1.75 + i * 0.22, 0.005, 8, 160]} />
+            <meshBasicMaterial color={c} transparent opacity={0.35} />
+          </mesh>
+        </Spin>
+      ))}
     </group>
   );
 }
@@ -221,77 +251,46 @@ function Council({ still, color, delay }) {
   );
 }
 
-// WorldFin: headlines fly in and land where the event happened; a verdict rises from each spot,
-// up for invest and down for pull out, while a price line traces round the orbit, scoring the
-// calls against the market. Then the markers settle and the next day's news comes in.
+// WorldFin: the globe turns while events land on it as pillars that rise and settle back.
 const UP = new THREE.Vector3(0, 1, 0);
 const EVENTS = [
-  [0.4, 0.6, 0.7, 1],
-  [-0.92, 0.15, 0.3, 0],
-  [0.2, -0.5, 0.84, 1],
-  [-0.3, 0.8, -0.5, 1],
-  [0.8, -0.2, -0.55, 0],
-  [-0.6, -0.6, 0.5, 1],
-].map(([x, y, z, invest]) => {
-  const n = new THREE.Vector3(x, y, z).normalize();
-  return { position: n.toArray(), quaternion: new THREE.Quaternion().setFromUnitVectors(UP, n), invest };
+  [0.4, 0.6, 0.7],
+  [-0.7, 0.3, 0.65],
+  [0.2, -0.5, 0.84],
+  [-0.3, 0.8, -0.5],
+  [0.8, -0.2, -0.55],
+  [-0.6, -0.6, 0.5],
+].map((v) => {
+  const n = new THREE.Vector3(...v).normalize();
+  return { position: n.toArray(), quaternion: new THREE.Quaternion().setFromUnitVectors(UP, n) };
 });
-const GLOBE_DOTS = (() => {
-  const out = [];
-  const n = 220;
-  for (let i = 0; i < n; i++) {
-    const y = 1 - (i / (n - 1)) * 2;
-    const r = Math.sqrt(1 - y * y);
-    const t = i * 2.399963;
-    if ((i * 7) % 5 < 2) out.push([Math.cos(t) * r * 1.02, y * 1.02, Math.sin(t) * r * 1.02]);
-  }
-  return out;
-})();
-const PRICE_POINTS = 160;
-const PRICE = new Float32Array(
-  Array.from({ length: PRICE_POINTS }, (_, i) => {
-    const a = (i / (PRICE_POINTS - 1)) * Math.PI * 2;
-    const y = Math.sin(i * 0.37) * 0.05 + Math.sin(i * 0.11) * 0.08 + Math.sin(i * 1.3) * 0.02;
-    return [Math.cos(a) * 1.5, y, Math.sin(a) * 1.5];
-  }).flat(),
-);
-const STEP = 850;
-
-const globeInit = () => ({ ring: 0, line: 0, ev: EVENTS.map(() => ({ land: 0, mark: 0 })) });
-
-function globeStory({ intro, loop }, s) {
-  intro.add(s, { ring: [0, 1], duration: 1500, ease: OUT });
-  s.ev.forEach((e, i) => {
-    loop.add(e, { land: [0, 1], duration: 750 }, i * STEP).add(e, { mark: [0, 1], duration: 650, ease: OUT }, i * STEP + 700);
-  });
-  const end = EVENTS.length * STEP + 1600;
-  loop
-    .add(s, { line: [0, 1], duration: end, ease: 'linear' }, 0)
-    .add(s.ev, { mark: 0, duration: 600 }, end)
-    .add(s.ev, { land: 0, duration: 1 }, end + 600)
-    .add(s, { line: 0, duration: 1 }, end + 600);
-}
 
 function Globe({ still, color, delay }) {
-  const s = useStory(globeInit, globeStory, { delay, still, at: 0.7 });
+  const clock = useClock(delay);
   const body = useRef();
   const ring = useRef();
-  const cards = useRef([]);
-  const marks = useRef([]);
-  const price = useRef();
-  useFrame((_, dt) => {
-    if (body.current && !still) body.current.rotation.y += dt * 0.12;
-    if (ring.current) ring.current.rotation.x = lerp(1.1, 0, s.ring);
-    price.current?.geometry.setDrawRange(0, Math.floor(s.line * PRICE_POINTS));
-    s.ev.forEach((e, i) => {
-      const c = cards.current[i];
-      if (c) {
-        c.position.set(lerp(0.55, 0, easeOut(e.land)), lerp(0.75, -0.04, e.land), 0);
-        c.rotation.set(-Math.PI / 2 * e.land, 0, lerp(0.6, 0, e.land));
-        c.visible = e.land > 0.001 && e.land < 0.999;
-      }
-      const m = marks.current[i];
-      if (m) m.position.y = lerp(-0.32, 0.02, e.mark);
+  const pillars = useRef([]);
+  const dots = useMemo(() => {
+    const out = [];
+    const n = 220;
+    for (let i = 0; i < n; i++) {
+      const y = 1 - (i / (n - 1)) * 2;
+      const r = Math.sqrt(1 - y * y);
+      const t = i * 2.399963;
+      if ((i * 7) % 5 < 2) out.push([Math.cos(t) * r * 1.02, y * 1.02, Math.sin(t) * r * 1.02]);
+    }
+    return out;
+  }, []);
+  useFrame((state) => {
+    const t = still ? 4 : clock(state);
+    if (body.current) body.current.rotation.y = 0.4 + t * 0.18;
+    if (ring.current) ring.current.rotation.x = lerp(Math.PI / 2 + 1.1, Math.PI / 2, easeOut(span(t, 0, 1.6)));
+    pillars.current.forEach((m, i) => {
+      if (!m) return;
+      const phase = ((t + i * 1.1) % 6.6) / 6.6;
+      const h = still ? 0.6 : easeOut(span(phase, 0, 0.12)) * (1 - easeInOut(span(phase, 0.55, 0.75)));
+      m.scale.y = Math.max(0.001, h);
+      m.position.y = (0.55 * m.scale.y) / 2;
     });
   });
   return (
@@ -301,60 +300,26 @@ function Globe({ still, color, delay }) {
           <sphereGeometry args={[1, 64, 64]} />
           <Clay />
         </mesh>
-        <Instances limit={GLOBE_DOTS.length}>
-          <sphereGeometry args={[0.024, 10, 10]} />
+        <Instances limit={dots.length}>
+          <sphereGeometry args={[0.028, 10, 10]} />
           <Accent color={color} />
-          {GLOBE_DOTS.map((p, i) => (
+          {dots.map((p, i) => (
             <Instance key={i} position={p} />
           ))}
         </Instances>
         {EVENTS.map((e, i) => (
           <group key={i} position={e.position} quaternion={e.quaternion}>
-            <group ref={(g) => (cards.current[i] = g)}>
-              <RoundedBox args={[0.34, 0.22, 0.012]} radius={0.01} smoothness={2}>
-                <Clay />
-              </RoundedBox>
-              <mesh position={[-0.04, 0.05, 0.007]}>
-                <planeGeometry args={[0.22, 0.03]} />
-                <meshBasicMaterial color={INK} />
-              </mesh>
-              <mesh position={[0, -0.01, 0.007]}>
-                <planeGeometry args={[0.26, 0.018]} />
-                <meshBasicMaterial color="#8fb3c9" />
-              </mesh>
-              <mesh position={[-0.05, -0.05, 0.007]}>
-                <planeGeometry args={[0.18, 0.018]} />
-                <meshBasicMaterial color="#8fb3c9" />
-              </mesh>
-            </group>
-            <group ref={(m) => (marks.current[i] = m)}>
-              {/* Invest points out of the globe, pull out points into it. */}
-              <group position={[0, 0.13, 0]} rotation={[e.invest ? 0 : Math.PI, 0, 0]}>
-                <mesh position={[0, -0.06, 0]}>
-                  <cylinderGeometry args={[0.022, 0.022, 0.16, 12]} />
-                  {e.invest ? <Accent color={color} /> : <Accent color="#5b5fc7" />}
-                </mesh>
-                <mesh position={[0, 0.07, 0]}>
-                  <coneGeometry args={[0.065, 0.12, 24]} />
-                  {e.invest ? <Accent color={color} /> : <Accent color="#5b5fc7" />}
-                </mesh>
-              </group>
-            </group>
+            <mesh ref={(m) => (pillars.current[i] = m)}>
+              <cylinderGeometry args={[0.035, 0.035, 0.55, 12]} />
+              <Accent color={color} />
+            </mesh>
           </group>
         ))}
       </group>
-      <group ref={ring}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.5, 0.008, 8, 200]} />
-          <Chrome />
-        </mesh>
-        <line ref={price}>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[PRICE, 3]} />
-          </bufferGeometry>
-          <lineBasicMaterial color={color} toneMapped={false} />
-        </line>
-      </group>
+      <mesh ref={ring} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1.45, 0.022, 16, 160]} />
+        <Chrome />
+      </mesh>
     </group>
   );
 }
@@ -946,140 +911,69 @@ function trace(i, d) {
   return [-d, o];
 }
 
-// RISC-V attn: four nested attention loops in plain C hang above the chip. The compiler pass
-// collapses them into one attn instruction with its four operands, the instruction drops into the
-// die, and the die seats and runs it out along the traces.
-const NESTS = 4;
-const NEST_AT = [0, 0.95, 0.4];
-const BAR = [0.62, 0.07];
-const CHIP_PINS = (() => {
-  const out = [];
-  for (let i = 0; i < 8; i++) {
-    const o = -0.84 + i * 0.24;
-    out.push([o, 1.12, 0], [o, -1.12, 0], [1.12, o, 0], [-1.12, o, 0]);
-  }
-  return out;
-})();
-
-const chipInit = () => ({ nests: Array.from({ length: NESTS }, () => ({ in: 0 })), fold: 0, drop: 0, lift: 0, seat: 0, run: 0 });
-
-function chipStory({ intro, loop }, s) {
-  intro.add(s.nests, { in: [0, 1], duration: 800, ease: OUT, delay: stagger(110) });
-  loop
-    .add(s, { fold: [0, 1], duration: 1300 }, 600)
-    .add(s, { lift: [0, 1], duration: 450, ease: OUT }, 1800)
-    .add(s, { drop: [0, 1], duration: 850 }, 2000)
-    .add(s, { seat: [0, 1], lift: 0, duration: 700 }, 2850)
-    .add(s, { run: [0, 1], duration: 1300, ease: 'linear' }, 3500)
-    .add(s, { fold: 0, duration: 1000 }, 5000)
-    .add(s, { drop: 0, seat: 0, run: 0, duration: 1 }, 5000);
-}
-
+// RISC-V attn: signals run in along the pins, the die lifts and turns as the instruction executes,
+// then seats back into the package.
 function Chip({ still, color, delay }) {
-  const s = useStory(chipInit, chipStory, { delay, still, at: 0.15 });
-  const nests = useRef([]);
-  const bar = useRef();
+  const clock = useClock(delay);
   const die = useRef();
   const signals = useRef();
-  useFrame(() => {
-    // Each nest is four edges; folding pulls every nest down to the instruction's own size.
-    nests.current.forEach((edges, i) => {
-      if (!edges) return;
-      const w = lerp(0.95 - i * 0.17, BAR[0] / 2, s.fold);
-      const h = lerp(0.55 - i * 0.11, BAR[1] / 2, s.fold);
-      const [top, bottom, left, right] = edges.children;
-      top.position.y = h;
-      bottom.position.y = -h;
-      left.position.x = -w;
-      right.position.x = w;
-      top.scale.x = bottom.scale.x = w * 2;
-      left.scale.y = right.scale.y = h * 2;
-      edges.position.y = NEST_AT[1] + lerp(0.8, 0, s.nests[i].in);
-      edges.visible = s.fold < 0.99;
-      edges.children.slice(4).forEach((line) => (line.visible = s.fold < 0.2));
-    });
-    if (bar.current) {
-      bar.current.position.set(NEST_AT[0], lerp(NEST_AT[1], -0.15, s.drop), lerp(NEST_AT[2], 0.25, s.drop));
-      bar.current.visible = s.fold > 0.98 && s.drop < 0.99;
+  const pins = useMemo(() => {
+    const out = [];
+    for (let i = 0; i < 8; i++) {
+      const o = -0.84 + i * 0.24;
+      out.push([o, 1.12, 0], [o, -1.12, 0], [1.12, o, 0], [-1.12, o, 0]);
     }
+    return out;
+  }, []);
+  useFrame((state) => {
+    const t = still ? 0 : clock(state);
+    const p = (t % 6) / 6;
+    const lift = easeInOut(span(p, 0.3, 0.45)) * (1 - easeOut(span(p, 0.7, 0.85)));
     if (die.current) {
-      die.current.position.z = 0.13 + s.lift * 0.45;
-      die.current.rotation.z = s.seat * (Math.PI / 2);
+      die.current.position.z = 0.13 + lift * 0.5;
+      die.current.rotation.z = easeInOut(span(p, 0.4, 0.65)) * (Math.PI / 2);
     }
-    signals.current?.children.forEach((m, i) => {
-      const k = easeInOut(span(s.run, (i >> 2) * 0.12 + (i % 4) * 0.03, 0.5 + (i >> 2) * 0.12 + (i % 4) * 0.03));
-      const [x, y] = trace(i, lerp(0.58, 1.1, k));
-      m.position.set(x, y, 0.105);
-      m.visible = !still && k > 0 && k < 1;
+    signals.current?.children.forEach((s, i) => {
+      const k = easeInOut(span(p, 0.02 + (i >> 2) * 0.05 + (i % 4) * 0.012, 0.22 + (i >> 2) * 0.05 + (i % 4) * 0.012));
+      const [x, y] = trace(i, lerp(1.1, 0.58, k));
+      s.position.set(x, y, 0.105);
+      s.visible = !still && k > 0 && k < 1;
     });
   });
   return (
-    <group position={[0, -0.1, 0]} scale={0.92}>
-      {Array.from({ length: NESTS }, (_, i) => (
-        <group key={i} ref={(g) => (nests.current[i] = g)} position={[NEST_AT[0], NEST_AT[1], NEST_AT[2] + i * 0.04]}>
-          {[0, 1].map((e) => (
-            <mesh key={e}>
-              <boxGeometry args={[1, 0.022, 0.02]} />
-              <meshBasicMaterial color={i === NESTS - 1 ? color : '#5c6b78'} toneMapped={false} />
-            </mesh>
-          ))}
-          {[0, 1].map((e) => (
-            <mesh key={e + 2}>
-              <boxGeometry args={[0.022, 1, 0.02]} />
-              <meshBasicMaterial color={i === NESTS - 1 ? color : '#5c6b78'} toneMapped={false} />
-            </mesh>
-          ))}
-          <mesh position={[-0.68 + i * 0.17, 0.44 - i * 0.11, 0]}>
-            <planeGeometry args={[0.22, 0.03]} />
-            <meshBasicMaterial color="#8fb3c9" toneMapped={false} />
-          </mesh>
-        </group>
-      ))}
-      <group ref={bar}>
-        <RoundedBox args={[BAR[0], BAR[1] * 2.2, 0.08]} radius={0.03} smoothness={3}>
+    <group rotation={[-0.9, 0, 0.5]}>
+      <RoundedBox args={[2.1, 2.1, 0.18]} radius={0.04} smoothness={4}>
+        <meshPhysicalMaterial color="#1b2127" roughness={0.45} clearcoat={0.6} />
+      </RoundedBox>
+      <group ref={die} position={[0, 0, 0.13]}>
+        <RoundedBox args={[1.1, 1.1, 0.1]} radius={0.03} smoothness={4}>
           <Accent color={color} />
         </RoundedBox>
-        {[0, 1, 2, 3].map((o) => (
-          <mesh key={o} position={[-0.21 + o * 0.14, 0, 0.045]}>
-            <circleGeometry args={[0.028, 16]} />
-            <meshBasicMaterial color="#eef3f3" toneMapped={false} />
+      </group>
+      <Instances limit={pins.length}>
+        <boxGeometry args={[0.1, 0.1, 0.06]} />
+        <Chrome />
+        {pins.map((p, i) => (
+          <Instance key={i} position={p} scale={[i % 4 < 2 ? 1 : 1.6, i % 4 < 2 ? 1.6 : 1, 1]} />
+        ))}
+      </Instances>
+      {Array.from({ length: 16 }, (_, i) => {
+        const [x, y] = trace(i, 0.84);
+        const along = i % 4 < 2;
+        return (
+          <mesh key={i} position={[x, y, 0.092]}>
+            <boxGeometry args={along ? [0.03, 0.54, 0.004] : [0.54, 0.03, 0.004]} />
+            <meshBasicMaterial color="#5c6b78" />
+          </mesh>
+        );
+      })}
+      <group ref={signals}>
+        {Array.from({ length: 16 }, (_, i) => (
+          <mesh key={i}>
+            <boxGeometry args={[0.07, 0.07, 0.03]} />
+            <meshBasicMaterial color={color} toneMapped={false} />
           </mesh>
         ))}
-      </group>
-      <group rotation={[-1.05, 0, 0.5]} position={[0, -0.55, 0]} scale={0.75}>
-        <RoundedBox args={[2.1, 2.1, 0.18]} radius={0.04} smoothness={4}>
-          <meshPhysicalMaterial color="#1b2127" roughness={0.45} clearcoat={0.6} />
-        </RoundedBox>
-        <group ref={die} position={[0, 0, 0.13]}>
-          <RoundedBox args={[1.1, 1.1, 0.1]} radius={0.03} smoothness={4}>
-            <Accent color={color} />
-          </RoundedBox>
-        </group>
-        <Instances limit={CHIP_PINS.length}>
-          <boxGeometry args={[0.1, 0.1, 0.06]} />
-          <Chrome />
-          {CHIP_PINS.map((p, i) => (
-            <Instance key={i} position={p} scale={[i % 4 < 2 ? 1 : 1.6, i % 4 < 2 ? 1.6 : 1, 1]} />
-          ))}
-        </Instances>
-        {Array.from({ length: 16 }, (_, i) => {
-          const [x, y] = trace(i, 0.84);
-          const along = i % 4 < 2;
-          return (
-            <mesh key={i} position={[x, y, 0.092]}>
-              <boxGeometry args={along ? [0.03, 0.54, 0.004] : [0.54, 0.03, 0.004]} />
-              <meshBasicMaterial color="#5c6b78" />
-            </mesh>
-          );
-        })}
-        <group ref={signals}>
-          {Array.from({ length: 16 }, (_, i) => (
-            <mesh key={i}>
-              <boxGeometry args={[0.07, 0.07, 0.03]} />
-              <meshBasicMaterial color={color} toneMapped={false} />
-            </mesh>
-          ))}
-        </group>
       </group>
     </group>
   );
@@ -1107,18 +1001,12 @@ function KeyBody({ mat }) {
   );
 }
 
-// Key Router: a Claude Code session on the laptop holds a disposable gateway key. Its requests go
-// to the Cloudflare edge, which swaps in the real key and calls the provider; replies stream back
-// into the terminal. The edge's TTL dial drains, and the expired key turns and drops away.
+// Key Router: the edge is a cloud. The real provider key slides into it and stays; a disposable
+// gateway key turns out of the other side. Requests arc over the cloud and change colour as the
+// real key is swapped in, replies stream back underneath, the TTL dial on the cloud drains, and
+// the expired key turns edge-on and retracts.
 const TICKS = 24;
 const TICK_OFF = new THREE.Color('#cfd8db');
-const arc = (a, b, lift) =>
-  new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(...a),
-    new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + lift, (a[2] + b[2]) / 2 + 0.2),
-    new THREE.Vector3(...b),
-  );
-
 const PUFFS = [
   [0, 0, 0, 0.42],
   [-0.42, -0.1, 0, 0.3],
@@ -1127,7 +1015,7 @@ const PUFFS = [
   [0.22, 0.26, 0.05, 0.28],
   [0, -0.16, 0.15, 0.3],
 ];
-// Edge locations: dots on the cloud's front surface that no other puff covers.
+// Edge locations: sparse dots on the cloud's front that no other puff covers and the dial leaves free.
 const EDGE_DOTS = (() => {
   const out = [];
   PUFFS.forEach(([x, y, z, r], k) => {
@@ -1144,189 +1032,123 @@ const EDGE_DOTS = (() => {
   });
   return out;
 })();
+const KEY_SCALE = 0.75;
+const KEY_Y = -0.08;
+const REAL_IN = -1.45;
+const GATE_OUT = 1.45;
+const GATE_IN = 0.6;
+const gateArc = (a, b, h) =>
+  new THREE.QuadraticBezierCurve3(new THREE.Vector3(...a), new THREE.Vector3((a[0] + b[0]) / 2, h, 0.45), new THREE.Vector3(...b));
+const GATE_PATHS = {
+  inbound: gateArc([1.45, 0.12, 0.25], [0, 0.82, 0.3], 0.95),
+  outbound: gateArc([0, 0.82, 0.3], [-1.45, 0.12, 0.25], 0.95),
+  back: gateArc([-1.35, -0.3, 0.3], [1.35, -0.3, 0.3], -0.95),
+};
 
-// Claude Code's welcome box, drawn as four hairlines on the screen.
-const BOX = [
-  [0, 1.29, 1.8, 0.012],
-  [0, 1.03, 1.8, 0.012],
-  [-0.9, 1.16, 0.012, 0.27],
-  [0.9, 1.16, 0.012, 0.27],
-];
-const REPLY = [1.3, 0.9, 1.5, 0.7];
+const gateInit = () => ({ real: 0, out: 0, ttl: 0, asks: [0, 1, 2].map(() => ({ k: 0 })), replies: [0, 1, 2, 3, 4].map(() => ({ k: 0 })) });
 
-function Edge({ still, color, delay }) {
-  const clock = useClock(delay);
-  const lid = useRef();
-  const star = useRef();
-  const lines = useRef([]);
-  const gate = useRef();
+function gateStory({ intro, loop }, s) {
+  intro.add(s, { real: [0, 1], duration: 1000, ease: OUT });
+  loop
+    .add(s, { out: [0, 1], duration: 1000, ease: OUT })
+    .add(s, { ttl: [0, 1], duration: 700, ease: OUT }, 200)
+    .add(s.asks, { k: [0, 1], duration: 1700, delay: stagger(380) }, 1300)
+    .add(s.replies, { k: [0, 1], duration: 1300, delay: stagger(140) }, 3300)
+    .add(s, { ttl: 0, duration: 4600, ease: 'linear' }, 1000)
+    .add(s, { out: 0, duration: 1000 }, 5800)
+    .add(s.asks, { k: 0, duration: 1 }, 6800)
+    .add(s.replies, { k: 0, duration: 1 }, 6800);
+}
+
+function KeyGate({ still, color, delay }) {
+  const s = useStory(gateInit, gateStory, { delay, still, at: 0.32 });
   const real = useRef();
+  const gate = useRef();
   const ticks = useRef([]);
-  const out = useRef();
-  const back = useRef();
+  const asks = useRef([]);
+  const replies = useRef();
   const lit = useMemo(() => new THREE.Color(color), [color]);
-  const paths = useMemo(
-    () => ({
-      toEdge: arc([-0.15, 0.72, 0.3], [-0.05, 0.8, 0.4], 0.35),
-      toModel: arc([1.0, 0.2, 0.25], [1.15, -0.08, 0.25], 0.25),
-      fromModel: arc([1.15, -0.4, 0.3], [0.6, 0.35, 0.4], -0.3),
-      fromEdge: arc([0.0, 0.3, 0.45], [-0.8, 0.1, 0.4], -0.4),
-    }),
-    [],
-  );
-  useFrame((state, dt) => {
-    const t = still ? 0 : clock(state);
-    if (lid.current) lid.current.rotation.x = still ? -0.28 : lerp(Math.PI / 2, -0.28, easeInOut(span(t, 0.1, 1.2)));
-    if (real.current) real.current.position.x = still ? 0 : lerp(-0.45, 0, easeOut(span(t, 0.3, 1.3)));
-    const p = still ? 0.62 : t > 1.4 ? ((t - 1.4) % 9) / 9 : 0;
-    const busy = p > 0.12 && p < 0.7;
-    if (star.current && !still) star.current.rotation.z -= dt * (busy ? 4 : 0.6);
+  useFrame(() => {
+    if (real.current) real.current.position.x = lerp(REAL_IN - 0.45, REAL_IN, s.real);
     if (gate.current) {
-      const up = easeOut(span(p, 0, 0.1)) * (1 - easeInOut(span(p, 0.88, 0.97)));
-      gate.current.position.y = lerp(0.05, 0.62, up);
-      gate.current.rotation.x = (Math.PI / 2) * Math.max(1 - up, easeInOut(span(p, 0.82, 0.88)));
+      gate.current.position.x = lerp(GATE_IN, GATE_OUT, s.out);
+      // Edge-on while inside the cloud, flat once out.
+      gate.current.rotation.x = (Math.PI / 2) * (1 - s.out);
     }
-    const left = TICKS * Math.min(span(p, 0.02, 0.12), 1 - span(p, 0.14, 0.82));
-    ticks.current.forEach((m, i) => m?.color.copy(TICK_OFF).lerp(lit, THREE.MathUtils.clamp(left - i, 0, 1)));
-    const move = (group, path, a, gap, len) =>
-      group?.children.forEach((b, i) => {
-        const k = span(p, a + i * gap, a + i * gap + len);
-        b.position.copy(path.getPointAt(easeInOut(k)));
-        b.visible = !still && k > 0 && k < 1;
-      });
-    move(out.current?.children[0], paths.toEdge, 0.12, 0.04, 0.14);
-    move(out.current?.children[1], paths.toModel, 0.26, 0.04, 0.14);
-    move(back.current?.children[0], paths.fromModel, 0.42, 0.025, 0.12);
-    move(back.current?.children[1], paths.fromEdge, 0.52, 0.025, 0.14);
-    lines.current.forEach((m, i) => {
-      if (!m) return;
-      const grow = still ? 1 : easeOut(span(p, 0.58 + i * 0.04, 0.68 + i * 0.04)) * (1 - span(p, 0.93, 1));
-      m.scale.x = Math.max(0.001, grow);
-      m.position.x = -0.82 + (REPLY[i] * m.scale.x) / 2;
+    ticks.current.forEach((m, i) => m?.color.copy(TICK_OFF).lerp(lit, THREE.MathUtils.clamp(s.ttl * TICKS - i, 0, 1)));
+    // Each request is two beads: the gateway key's colour up to the edge, chrome after the swap.
+    asks.current.forEach((pair, i) => {
+      if (!pair) return;
+      const k = s.asks[i].k;
+      const [before, after] = pair.children;
+      before.position.copy(GATE_PATHS.inbound.getPointAt(easeInOut(Math.min(1, k * 2))));
+      after.position.copy(GATE_PATHS.outbound.getPointAt(easeInOut(Math.max(0, k * 2 - 1))));
+      before.visible = !still && k > 0.01 && k < 0.5;
+      after.visible = !still && k >= 0.5 && k < 0.99;
+    });
+    replies.current?.children.forEach((b, i) => {
+      const k = s.replies[i].k;
+      b.position.copy(GATE_PATHS.back.getPointAt(easeInOut(k)));
+      b.visible = !still && k > 0.01 && k < 0.99;
     });
   });
   return (
-    <group rotation={[0.18, -0.25, 0]} position={[0.05, -0.2, 0]} scale={0.92}>
-      <group position={[-0.8, -0.6, 0.15]} rotation={[0, 0.45, 0]} scale={0.6}>
-        <Laptop lidRef={lid} still={still}>
-          {BOX.map(([x, y, w, h], i) => (
-            <mesh key={i} position={[x, y, 0.036]}>
-              <planeGeometry args={[w, h]} />
-              <meshBasicMaterial color={color} toneMapped={false} />
-            </mesh>
-          ))}
-          <group ref={star} position={[-0.72, 1.16, 0.037]}>
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <mesh key={i} rotation={[0, 0, (i * Math.PI) / 6]}>
-                <planeGeometry args={[0.22, 0.032]} />
-                <meshBasicMaterial color={color} toneMapped={false} />
-              </mesh>
-            ))}
-          </group>
-          <mesh position={[-0.15, 1.16, 0.036]}>
-            <planeGeometry args={[0.9, 0.06]} />
-            <meshBasicMaterial color="#8fb3c9" toneMapped={false} />
+    <group rotation={[0.22, -0.32, 0]} scale={0.92}>
+      {PUFFS.map(([x, y, z, r], i) => (
+        <mesh key={i} position={[x, y, z]} scale={r}>
+          <sphereGeometry args={[1, 48, 48]} />
+          <Clay />
+        </mesh>
+      ))}
+      <Instances limit={EDGE_DOTS.length}>
+        <sphereGeometry args={[0.018, 8, 8]} />
+        <Accent color={color} />
+        {EDGE_DOTS.map((d, i) => (
+          <Instance key={i} position={d} />
+        ))}
+      </Instances>
+      {Array.from({ length: TICKS }, (_, i) => {
+        const a = Math.PI / 2 - (i / TICKS) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.17, 0.02 + Math.sin(a) * 0.17, 0.47]} rotation={[0, 0, a]}>
+            <boxGeometry args={[0.05, 0.016, 0.006]} />
+            <meshBasicMaterial ref={(m) => (ticks.current[i] = m)} color={color} toneMapped={false} />
           </mesh>
-          <mesh position={[-0.9, 0.86, 0.036]} rotation={[0, 0, Math.PI / 4]}>
-            <planeGeometry args={[0.07, 0.07]} />
-            <meshBasicMaterial color={color} toneMapped={false} />
-          </mesh>
-          {REPLY.map((w, i) => (
-            <mesh key={i} ref={(m) => (lines.current[i] = m)} position={[-0.82, 0.86 - i * 0.17, 0.036]}>
-              <planeGeometry args={[w, 0.06]} />
-              <meshBasicMaterial color={i ? '#8fb3c9' : '#dfe6f1'} toneMapped={false} />
-            </mesh>
-          ))}
-        </Laptop>
+        );
+      })}
+      <group ref={real} position={[REAL_IN, KEY_Y, 0]} scale={KEY_SCALE}>
+        <KeyBody mat={() => <Chrome />} />
       </group>
-
-      <group ref={gate} position={[-0.65, 0.62, 0.3]}>
-        <group rotation={[0, 0, 0.25]} scale={0.42}>
+      <group ref={gate} position={[GATE_IN, KEY_Y, 0]}>
+        <group rotation={[0, 0, Math.PI]} scale={KEY_SCALE}>
           <KeyBody mat={() => <Accent color={color} />} />
         </group>
       </group>
-
-      <group position={[0.35, 0.62, 0]}>
-        {PUFFS.map(([x, y, z, r], i) => (
-          <mesh key={i} position={[x, y, z]} scale={r}>
-            <sphereGeometry args={[1, 48, 48]} />
-            <Clay />
+      {[0, 1, 2].map((i) => (
+        <group key={i} ref={(g) => (asks.current[i] = g)}>
+          <mesh scale={0.065}>
+            <sphereGeometry args={[1, 20, 20]} />
+            <Accent color={color} />
           </mesh>
-        ))}
-        <Instances limit={EDGE_DOTS.length}>
-          <sphereGeometry args={[0.018, 8, 8]} />
-          <Accent color={color} />
-          {EDGE_DOTS.map((d, i) => (
-            <Instance key={i} position={d} />
-          ))}
-        </Instances>
-        {Array.from({ length: TICKS }, (_, i) => {
-          const a = Math.PI / 2 - (i / TICKS) * Math.PI * 2;
-          return (
-            <mesh key={i} position={[Math.cos(a) * 0.17, 0.02 + Math.sin(a) * 0.17, 0.47]} rotation={[0, 0, a]}>
-              <boxGeometry args={[0.05, 0.016, 0.006]} />
-              <meshBasicMaterial ref={(m) => (ticks.current[i] = m)} color={color} toneMapped={false} />
-            </mesh>
-          );
-        })}
-        <group position={[0.4, -0.18, 0.05]} rotation={[0, 0, -0.62]}>
-          <group ref={real}>
-            <group scale={0.55}>
-              <KeyBody mat={() => <Chrome />} />
-            </group>
-          </group>
+          <mesh scale={0.065}>
+            <sphereGeometry args={[1, 20, 20]} />
+            <Chrome />
+          </mesh>
         </group>
-      </group>
-
-      <group position={[1.15, -0.5, 0]} rotation={[0, -0.35, 0]}>
-        {[0, 1, 2].map((i) => (
-          <group key={i} position={[0, i * 0.17, 0]}>
-            <RoundedBox args={[0.6, 0.14, 0.46]} radius={0.03} smoothness={3}>
-              <Chrome />
-            </RoundedBox>
-            <mesh position={[0.2, 0, 0.232]}>
-              <boxGeometry args={[0.1, 0.025, 0.004]} />
-              <meshBasicMaterial color={color} toneMapped={false} />
-            </mesh>
-          </group>
-        ))}
-      </group>
-
-      <group ref={out}>
-        {[
-          (i) => <Accent key={i} color={color} />,
-          (i) => <Chrome key={i} />,
-        ].map((mat, g) => (
-          <group key={g}>
-            {[0, 1, 2].map((i) => (
-              <mesh key={i} scale={0.045}>
-                <sphereGeometry args={[1, 16, 16]} />
-                {mat(i)}
-              </mesh>
-            ))}
-          </group>
-        ))}
-      </group>
-      <group ref={back}>
-        {[
-          (i) => <Chrome key={i} />,
-          (i) => <Accent key={i} color={color} />,
-        ].map((mat, g) => (
-          <group key={g}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <mesh key={i} scale={0.03}>
-                <sphereGeometry args={[1, 12, 12]} />
-                {mat(i)}
-              </mesh>
-            ))}
-          </group>
+      ))}
+      <group ref={replies}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <mesh key={i} scale={0.04}>
+            <sphereGeometry args={[1, 16, 16]} />
+            <Accent color={color} />
+          </mesh>
         ))}
       </group>
     </group>
   );
 }
 
-const SHAPES = { council: Council, globe: Globe, rings: Recovery, phone: Desk, files: Files, pair: Pair, chip: Chip, key: Edge };
+const SHAPES = { council: Council, globe: Globe, rings: Recovery, phone: Desk, files: Files, pair: Pair, chip: Chip, key: KeyGate };
 
 // Turntable swap that never leaves the frame: the current object turns edge-on, the next turns
 // in from the other side and replays its entrance.
@@ -1376,106 +1198,4 @@ export function Artifact({ shape, color, still, delay = 0, tilt = 0.3 }) {
       </Float>
     </group>
   );
-}
-
-// Hero: an atom whose electrons are the projects. Each runs its own story in miniature on a
-// tilted orbit around a nucleus made of every project's colour. Pointing at one stops the orbits
-// and names it; clicking opens it.
-const ORBITS = [
-  { tilt: [1.15, 0, 0.35], r: 1.45, speed: 0.22 },
-  { tilt: [1.15, 0, -1.0], r: 1.65, speed: -0.18 },
-  { tilt: [0.35, 0.9, 0.1], r: 1.85, speed: 0.15 },
-  { tilt: [1.9, -0.6, 0.5], r: 2.05, speed: -0.12 },
-];
-const SEAT = new THREE.Vector3();
-const NUCLEUS = Array.from({ length: 8 }, (_, i) => {
-  const y = 1 - (i / 7) * 2;
-  const r = Math.sqrt(1 - y * y);
-  const a = i * 2.399963;
-  return [Math.cos(a) * r * 0.2, y * 0.2, Math.sin(a) * r * 0.2];
-});
-
-export function HeroOrrery({ projects, hovered, onHover, onPick }) {
-  const calm = useReducedMotion();
-  const tilt = useTilt(calm ? 0 : 0.35);
-  const angle = useRef(0);
-  const orbits = useRef([]);
-  const electrons = useRef([]);
-  const core = useRef([]);
-  useFrame((state, dt) => {
-    if (!calm && hovered === null) angle.current += dt;
-    orbits.current.forEach((g, i) => g && (g.rotation.z = angle.current * ORBITS[i].speed));
-    electrons.current.forEach((g, i) => {
-      if (!g) return;
-      const k = 1 - Math.exp(-dt * 8);
-      const s = g.scale.x + ((hovered === i ? 0.36 : 0.26) - g.scale.x) * k;
-      g.scale.setScalar(s);
-      // Cancel every parent rotation so each miniature stays upright, facing the viewer.
-      g.parent.getWorldQuaternion(g.quaternion).invert();
-    });
-    core.current.forEach((m, i) => {
-      if (!m) return;
-      const k = 1 - Math.exp(-dt * 6);
-      m.position.lerp(SEAT.fromArray(NUCLEUS[i]).multiplyScalar(hovered === i ? 1.9 : 1), k);
-    });
-  });
-  const enter = (i) => (e) => {
-    e.stopPropagation();
-    onHover(i);
-  };
-  const leave = () => onHover(null);
-  return (
-    <group ref={tilt}>
-      <Spin speed={calm ? 0 : 0.25}>
-        {NUCLEUS.map((p, i) => (
-          <mesh key={i} ref={(m) => (core.current[i] = m)} position={p} scale={0.15}>
-            <sphereGeometry args={[1, 32, 32]} />
-            <Accent color={projects[i % projects.length].color} />
-          </mesh>
-        ))}
-      </Spin>
-      {ORBITS.map((o, i) => (
-        <group key={i} rotation={o.tilt}>
-          <mesh>
-            <torusGeometry args={[o.r, 0.005, 8, 200]} />
-            <meshBasicMaterial color={INK} transparent opacity={0.18} />
-          </mesh>
-          <group ref={(g) => (orbits.current[i] = g)}>
-            {projects
-              .map((p, j) => [p, j])
-              .filter(([, j]) => j % ORBITS.length === i)
-              .map(([p, j], n) => {
-                const a = n * Math.PI + i * 0.7;
-                return (
-                  <group key={p.slug} position={[Math.cos(a) * o.r, Math.sin(a) * o.r, 0]}>
-                    <group>
-                      <group ref={(g) => (electrons.current[j] = g)} scale={0.26}>
-                        <MiniShape shape={p.shape} color={p.color} still={calm} />
-                      </group>
-                      <mesh
-                        visible={false}
-                        onPointerOver={enter(j)}
-                        onPointerOut={leave}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          leave();
-                          onPick(p.slug);
-                        }}
-                      >
-                        <sphereGeometry args={[0.36, 12, 12]} />
-                      </mesh>
-                    </group>
-                  </group>
-                );
-              })}
-          </group>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-function MiniShape({ shape, color, still }) {
-  const Shape = SHAPES[shape];
-  return <Shape color={color} still={still} delay={0} />;
 }
