@@ -92,11 +92,11 @@ zero or fading; things move into place. On project pages the entrance waits 0.9 
 | Nexus | Faceted core, six model nodes on a ring | Nodes slide out along spokes; pulses go out and back; a debate bead circles |
 | WorldFin | Clay globe dotted with events, chrome ring | Ring swings into orbit; event pillars rise and settle as the globe turns |
 | AdapFit | Three rings | Drift apart, then settle concentric |
-| PocketDesk | Laptop and phone | Lid opens on its hinge; phone turns; commands arc to the screen; terminal lines type out |
+| PocketDesk | Laptop (shared with Key Router) and phone | Lid opens on its hinge; phone turns; commands arc to the screen; terminal lines type out |
 | Case Files | Stack of files | Fans open, top file slides out, closes |
 | Ping | Two phones | Turn toward each other, the card arcs across, both screens confirm, turn back |
 | RISC-V attn | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
-| Key Router | Worker block, chrome key, accent key | Real key slides in and stays; gateway key turns flat and slides out; requests cross the block and change colour; replies stream back; the TTL dial drains; the key turns edge-on and retracts |
+| Key Router | Laptop running Claude Code, edge cloud, provider stack | Lid opens on a Claude Code session; the gateway key rises from it; requests fly to the cloud in the key's colour and on to the provider in chrome after the swap; replies stream back as terminal lines while the spinner turns; the cloud's TTL dial drains and the key turns edge-on and drops away |
 
 On the home page, switching projects is a turntable: the current object turns edge-on and the
 next turns in from the other side, replaying its entrance, all inside the frame.
