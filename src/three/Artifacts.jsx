@@ -813,8 +813,8 @@ function Hand({ setFinger, setRing }) {
           <Glass />
         </mesh>
       </group>
-      <mesh position={[0, 0.1, -0.12]}>
-        <torusGeometry args={[0.5, 0.012, 8, 96]} />
+      <mesh position={[0, 0.27, -0.12]}>
+        <torusGeometry args={[0.62, 0.012, 8, 96]} />
         <meshBasicMaterial ref={setRing} color="#cfd8db" toneMapped={false} />
       </mesh>
     </group>
