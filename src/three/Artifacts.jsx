@@ -793,7 +793,7 @@ const FINGER_LEN = [0.36, 0.44, 0.42, 0.32];
 // Peace sign: index and middle stay up; ring, little finger and thumb fold.
 const FOLDS = [1, 0, 0, 1, 1];
 
-function Hand({ setFinger, setRing }) {
+function Hand({ setFinger }) {
   return (
     <group>
       <RoundedBox args={[0.5, 0.52, 0.14]} radius={0.07} smoothness={4}>
@@ -813,10 +813,6 @@ function Hand({ setFinger, setRing }) {
           <Glass />
         </mesh>
       </group>
-      <mesh position={[0, 0.27, -0.12]}>
-        <torusGeometry args={[0.62, 0.012, 8, 96]} />
-        <meshBasicMaterial ref={setRing} color="#cfd8db" toneMapped={false} />
-      </mesh>
     </group>
   );
 }
@@ -888,8 +884,12 @@ function Pair({ still, color, delay }) {
             ))}
           </group>
           <group position={[side * 0.95, 1.25, 0.1]} scale={1.0} rotation={[0.15, side * -0.3, 0]}>
-            <Hand setFinger={(i, g) => (fingers.current[p * 5 + i] = g)} setRing={(m) => (rings.current[p] = m)} />
+            <Hand setFinger={(i, g) => (fingers.current[p * 5 + i] = g)} />
           </group>
+          <mesh position={[side * 0.95, 1.52, -0.3]}>
+            <torusGeometry args={[0.62, 0.012, 8, 96]} />
+            <meshBasicMaterial ref={(m) => (rings.current[p] = m)} color="#cfd8db" toneMapped={false} />
+          </mesh>
         </group>
       ))}
       <group ref={beads}>
