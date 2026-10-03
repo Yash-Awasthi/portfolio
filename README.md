@@ -33,7 +33,3 @@ To add a project, append an entry to `PROJECTS` in `src/data.js` and pick one of
 ## Deploy
 
 Vercel, with `vercel.json` rewriting every path to `index.html` so project URLs load directly.
-
-## Credits
-
-The victory hand animation (public/victory.json) is from Google Noto Emoji Animation, licensed CC BY 4.0.

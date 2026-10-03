@@ -1,5 +1,5 @@
-import { useLayoutEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { useLayoutEffect, useRef } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { View, PerspectiveCamera, Environment, Lightformer } from '@react-three/drei';
 
@@ -35,29 +35,49 @@ function Studio() {
   );
 }
 
-// Backs the camera off until a sphere of `radius` fits the view on its tighter axis, so nothing
-// is cut off whatever shape the view has.
-function Fit({ radius }) {
+// Starts from a sphere of `radius`, then frames the measured content as tightly as it has been seen
+// to reach (entrances and swings included): it fills the view and is never cut.
+const BOX = new THREE.Box3();
+function Fit({ radius, target }) {
   const camera = useThree((st) => st.camera);
   const size = useThree((st) => st.size);
+  const need = useRef(0);
+  const tick = useRef(0);
+  const seen = useRef(false);
   useLayoutEffect(() => {
     const v = THREE.MathUtils.degToRad(camera.fov) / 2;
     const h = Math.atan(Math.tan(v) * (size.width / size.height));
-    camera.position.set(0, 0, radius / Math.sin(Math.min(v, h)));
+    need.current = radius / Math.sin(Math.min(v, h));
+    seen.current = false;
+    camera.position.set(0, 0, need.current);
     camera.updateProjectionMatrix();
   }, [camera, size, radius]);
+  useFrame(() => {
+    const g = target.current;
+    if (!g || ++tick.current % 10) return;
+    BOX.setFromObject(g);
+    if (BOX.isEmpty()) return;
+    const v = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    const x = Math.max(Math.abs(BOX.min.x), Math.abs(BOX.max.x));
+    const y = Math.max(Math.abs(BOX.min.y), Math.abs(BOX.max.y));
+    const want = (Math.max(y / v, x / (v * (size.width / size.height))) + BOX.max.z) * 1.04;
+    if (!seen.current || want > need.current) need.current = want;
+    seen.current = true;
+    camera.position.set(0, 0, camera.position.z + (need.current - camera.position.z) * 0.15);
+  });
   return null;
 }
 
 export function Scene({ className, style, children, fov = 35, radius = 1.9, ...props }) {
+  const content = useRef();
   return (
     <View className={className} style={style} {...props}>
       <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={fov} />
-      <Fit radius={radius} />
+      <Fit radius={radius} target={content} />
       <Studio />
       <ambientLight intensity={0.4} />
       <directionalLight position={[3, 5, 4]} intensity={1.2} />
-      {children}
+      <group ref={content}>{children}</group>
     </View>
   );
 }
