@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, RoundedBox, Instances, Instance } from '@react-three/drei';
+import { Float, MeshDistortMaterial, RoundedBox, Instances, Instance, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from 'motion/react';
 import { stagger } from 'animejs';
@@ -17,9 +17,16 @@ function Clay(props) {
   return <meshPhysicalMaterial color="#eef3f3" roughness={0.55} clearcoat={0.3} {...props} />;
 }
 // Cheap glass: translucent clearcoat shell, no transmission pass, so two hands cost nothing extra.
-function Glass(props) {
-  return <meshPhysicalMaterial color="#7f9fd6" metalness={0.35} roughness={0.08} clearcoat={1} clearcoatRoughness={0.05} transparent opacity={0.82} envMapIntensity={2} {...props} />;
-}
+const GLASS = new THREE.MeshPhysicalMaterial({
+  color: '#7f9fd6',
+  metalness: 0.35,
+  roughness: 0.08,
+  clearcoat: 1,
+  clearcoatRoughness: 0.05,
+  transparent: true,
+  opacity: 0.82,
+  envMapIntensity: 2,
+});
 function Accent({ color = COBALT, ...props }) {
   return <meshPhysicalMaterial color={color} roughness={0.28} clearcoat={1} clearcoatRoughness={0.2} {...props} />;
 }
@@ -788,40 +795,43 @@ function Files({ still, color, delay }) {
 // check lights on both screens, the phones turn to each other and the sealed card crosses.
 const SCREEN_IDLE = new THREE.Color('#eef3f3');
 const DIGIT_DIM = new THREE.Color('#cfd8db');
-const FINGER_X = [-0.18, -0.06, 0.06, 0.18];
-const FINGER_LEN = [0.36, 0.44, 0.42, 0.32];
-// Peace sign: index and middle stay up; ring, little finger and thumb fold.
-const FOLDS = [1, 0, 0, 1, 1];
-
-function Hand({ setFinger }) {
+// "HAND Victory sign" by Abdelmoneim on Sketchfab (CC BY 4.0), drawn in glass. The model faces +x.
+useGLTF.preload('/hand-v.glb');
+function Victory({ s, mirror }) {
+  const { scene } = useGLTF('/hand-v.glb');
+  const ref = useRef();
+  const hand = useMemo(() => {
+    const g = scene.clone(true);
+    g.traverse((o) => {
+      if (o.isMesh) o.material = GLASS;
+    });
+    const box = new THREE.Box3().setFromObject(g);
+    const k = 1.05 / (box.max.y - box.min.y);
+    const c = box.getCenter(new THREE.Vector3());
+    g.scale.setScalar(k);
+    g.position.set(-c.x * k, -c.y * k, -c.z * k);
+    return g;
+  }, [scene]);
+  useFrame(() => {
+    const g = ref.current;
+    if (!g) return;
+    g.scale.setScalar(lerp(0.92, 1, s.lock));
+  });
   return (
-    <group>
-      <RoundedBox args={[0.5, 0.52, 0.14]} radius={0.07} smoothness={4}>
-        <Glass />
-      </RoundedBox>
-      {FINGER_X.map((x, i) => (
-        <group key={i} ref={(g) => setFinger(i, g)} position={[x, 0.24, 0]}>
-          <mesh position={[0, FINGER_LEN[3 - i] / 2 + 0.02, 0]}>
-            <capsuleGeometry args={[0.052, FINGER_LEN[3 - i], 6, 12]} />
-            <Glass />
-          </mesh>
+    <group position={[0, 0.27, 0]} scale={[mirror ? -1 : 1, 1, 1]}>
+      <group ref={ref} rotation={[0, 0, -0.1]}>
+        <group rotation={[0, -Math.PI / 2, 0]}>
+          <primitive object={hand} />
         </group>
-      ))}
-      <group ref={(g) => setFinger(4, g)} position={[-0.25, -0.05, 0]} rotation={[0, 0, 0.75]}>
-        <mesh position={[0, 0.14, 0]}>
-          <capsuleGeometry args={[0.052, 0.2, 6, 12]} />
-          <Glass />
-        </mesh>
       </group>
     </group>
   );
 }
 
-const pairInit = () => ({ curl: 0, lock: 0, digits: Array.from({ length: 6 }, () => ({ on: 0 })), face: 0, send: 0, glow: 0 });
+const pairInit = () => ({ lock: 0, digits: Array.from({ length: 6 }, () => ({ on: 0 })), face: 0, send: 0, glow: 0 });
 
 function pairStory({ loop }, s) {
   loop
-    .add(s, { curl: [0, 1], duration: 900 }, 300)
     .add(s, { lock: [0, 1], duration: 300, ease: OUT }, 1200)
     .add(s.digits, { on: [0, 1], duration: 220, delay: stagger(90) }, 1500)
     .add(s, { face: [0, 1], duration: 700 }, 2400)
@@ -830,14 +840,13 @@ function pairStory({ loop }, s) {
     .add(s, { glow: 0, duration: 500 }, 4900)
     .add(s, { face: 0, lock: 0, duration: 700 }, 5400)
     .add(s.digits, { on: 0, duration: 300 }, 5400)
-    .add(s, { curl: 0, send: 0, duration: 800 }, 5700);
+    .add(s, { send: 0, duration: 800 }, 5700);
 }
 
 function Pair({ still, color, delay }) {
   const s = useStory(pairInit, pairStory, { delay, still, at: 0.42 });
   const phones = useRef([]);
   const screens = useRef([]);
-  const fingers = useRef([]);
   const rings = useRef([]);
   const digits = useRef([]);
   const beads = useRef();
@@ -850,17 +859,6 @@ function Pair({ still, color, delay }) {
   useFrame(() => {
     const turn = lerp(0.12, 0.6, s.face);
     phones.current.forEach((g, p) => g && (g.rotation.y = p ? -turn : turn));
-    fingers.current.forEach((g, n) => {
-      if (!g) return;
-      const i = n % 5;
-      const fold = FOLDS[i] * s.curl;
-      if (i === 4) g.rotation.set(0, fold * 1.1, 0.75 - fold * 0.9);
-      else {
-        g.rotation.x = -fold * 2.4;
-        // The two raised fingers spread into a V.
-        g.rotation.z = FOLDS[i] ? 0 : s.curl * (i === 1 ? 0.22 : -0.22);
-      }
-    });
     rings.current.forEach((r) => r?.color.copy(DIGIT_DIM).lerp(lit, s.lock));
     digits.current.forEach((m, i) => m?.color.copy(DIGIT_DIM).lerp(lit, s.digits[i % 6].on));
     beads.current?.children.forEach((b, i) => {
@@ -883,8 +881,8 @@ function Pair({ still, color, delay }) {
               </mesh>
             ))}
           </group>
-          <group position={[side * 0.95, 1.25, 0.1]} scale={1.0} rotation={[0.15, side * -0.3, 0]}>
-            <Hand setFinger={(i, g) => (fingers.current[p * 5 + i] = g)} />
+          <group position={[side * 0.95, 1.25, 0.1]} scale={1.0}>
+            <Victory s={s} mirror={side > 0} />
           </group>
           <mesh position={[side * 0.95, 1.52, -0.3]}>
             <torusGeometry args={[0.62, 0.012, 8, 96]} />
