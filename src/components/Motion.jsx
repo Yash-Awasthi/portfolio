@@ -78,11 +78,11 @@ export function Words({ text, as = 'h2', className, delay = 0, onLoad = false })
     <M className={className} initial="hide" {...trigger} aria-label={text}>
       {words.map((w, i) => (
         <span key={i} aria-hidden>
-          <span className="inline-block overflow-hidden pb-[0.08em] align-top">
+          <span className="inline-block overflow-hidden py-[0.25em] -my-[0.25em] align-top">
             <motion.span
               className="inline-block"
               variants={{
-                hide: { y: '110%' },
+                hide: { y: '130%' },
                 show: { y: 0, transition: { duration: 1, ease: EASE, delay: delay + i * 0.06 } },
               }}
             >

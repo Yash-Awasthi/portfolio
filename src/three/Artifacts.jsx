@@ -1152,50 +1152,63 @@ function KeyGate({ still, color, delay }) {
 
 const SHAPES = { council: Council, globe: Globe, rings: Recovery, phone: Desk, files: Files, pair: Pair, chip: Chip, key: KeyGate };
 
-// Turntable swap that never leaves the frame: the current object turns edge-on, the next turns
-// in from the other side and replays its entrance.
+// Globe-turn swap: the current object and the next sit back to back on one axis and turn together
+// through half a revolution, so the swap is a single continuous motion with no pause between them.
+const TURN = 1;
 export function SwapArtifact({ shape, color, still }) {
-  const [shown, setShown] = useState({ shape, color, at: null });
-  const ref = useRef();
-  const leaving = useRef(null);
-  const arrived = useRef(null);
+  const [cur, setCur] = useState({ shape, color, delay: 0 });
+  const [next, setNext] = useState(null);
   const [warm, setWarm] = useState(0);
-  const others = Object.keys(SHAPES).filter((k) => k !== shown.shape);
+  const refs = useRef({});
+  const t0 = useRef(null);
+  const others = Object.keys(SHAPES).filter((k) => k !== cur.shape && k !== next?.shape);
   useFrame((state) => {
     // Each other shape draws for a few frames at near-zero size, one at a time, so its shaders
-    // compile before the first hover rather than during a swap.
+    // compile before the first hover rather than during a turn.
     if (warm < others.length * 3) setWarm(warm + 1);
-    const g = ref.current;
-    if (!g) return;
-    const now = state.clock.elapsedTime;
-    if (shown.shape !== shape) {
-      if (leaving.current === null) leaving.current = now;
-      const k = easeInOut(span(now - leaving.current, 0, 0.35));
-      g.rotation.y = k * (Math.PI / 2);
-      g.scale.setScalar(1 - k * 0.12);
-      if (k >= 1) {
-        leaving.current = null;
-        arrived.current = null;
-        setShown({ shape, color });
-      }
+    if (!next) {
+      if (shape !== cur.shape) setNext({ shape, color, delay: TURN / 2 });
       return;
     }
-    if (arrived.current === null) arrived.current = now;
-    const k = easeOut(span(now - arrived.current, 0, 0.7));
-    g.rotation.y = lerp(-Math.PI / 2, 0, k);
-    g.scale.setScalar(lerp(0.88, 1, k));
+    const a = refs.current[cur.shape];
+    const b = refs.current[next.shape];
+    if (!a || !b) return;
+    const now = state.clock.elapsedTime;
+    if (t0.current === null) t0.current = now;
+    const k = easeInOut(span(now - t0.current, 0, TURN));
+    const turn = k * Math.PI;
+    const dip = 1 - 0.12 * Math.sin(turn);
+    a.rotation.y = turn;
+    b.rotation.y = turn - Math.PI;
+    a.visible = turn < Math.PI / 2;
+    b.visible = !a.visible;
+    a.scale.setScalar(dip);
+    b.scale.setScalar(dip);
+    if (k >= 1) {
+      t0.current = null;
+      a.rotation.y = 0;
+      b.rotation.y = 0;
+      a.visible = true;
+      setCur(next);
+      setNext(null);
+    }
   });
   const calm = useReducedMotion();
   if (still || calm) return <Artifact key={shape} shape={shape} color={color} still={still} />;
+  const w = others[Math.floor(warm / 3)];
   return (
-    <group ref={ref}>
-      <Artifact key={shown.shape} shape={shown.shape} color={shown.color} still={still} />
-      {others[Math.floor(warm / 3)] && (
-        <group key={others[Math.floor(warm / 3)]} scale={0.001}>
-          <Artifact shape={others[Math.floor(warm / 3)]} color={color} still />
+    <>
+      {[cur, next].filter(Boolean).map((it) => (
+        <group key={it.shape} ref={(g) => (refs.current[it.shape] = g)} visible={it === cur || false}>
+          <Artifact shape={it.shape} color={it.color} delay={it.delay} />
+        </group>
+      ))}
+      {w && (
+        <group key={`warm-${w}`} scale={0.001}>
+          <Artifact shape={w} color={color} still />
         </group>
       )}
-    </group>
+    </>
   );
 }
 
