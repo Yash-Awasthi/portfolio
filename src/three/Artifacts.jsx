@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, RoundedBox, Instances, Instance } from '@react-three/drei';
+import { Float, RoundedBox, Instances, Instance } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from 'motion/react';
 import { easeOut, easeInOut, span, lerp } from './ease';
@@ -50,36 +50,6 @@ function Spin({ speed = 0.2, axis = 'y', still, children, ...props }) {
   return (
     <group ref={ref} {...props}>
       {children}
-    </group>
-  );
-}
-
-const HERO_MOONS = ['#3d5bd9', '#2a8f8a', '#5b5fc7'];
-
-// Reduced motion keeps each object's own story but drops pointer tilt, bobbing and the carousel.
-export function HeroBlob({ still }) {
-  const calm = useReducedMotion();
-  const tilt = useTilt(calm ? 0 : 0.5, still);
-  return (
-    <group ref={tilt}>
-      <Float speed={still || calm ? 0 : 1.4} rotationIntensity={0.6} floatIntensity={0.8}>
-        <mesh scale={1.2}>
-          <icosahedronGeometry args={[1, 64]} />
-          <MeshDistortMaterial color="#e4e5ea" metalness={1} roughness={0.08} distort={still ? 0.25 : 0.38} speed={still ? 0 : 1.6} />
-        </mesh>
-      </Float>
-      {HERO_MOONS.map((c, i) => (
-        <Spin key={c} speed={0.5 - i * 0.12} still={still} rotation={[0.5 + i * 0.5, i * 1.9, 0.3 - i * 0.4]}>
-          <mesh position={[1.75 + i * 0.22, 0, 0]} scale={0.17 - i * 0.03}>
-            <sphereGeometry args={[1, 48, 48]} />
-            <Accent color={c} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.75 + i * 0.22, 0.005, 8, 160]} />
-            <meshBasicMaterial color={c} transparent opacity={0.35} />
-          </mesh>
-        </Spin>
-      ))}
     </group>
   );
 }
@@ -817,4 +787,106 @@ export function Artifact({ shape, color, still, delay = 0, tilt = 0.3 }) {
       </Float>
     </group>
   );
+}
+
+// Hero: an atom whose electrons are the projects. Each runs its own story in miniature on a
+// tilted orbit around a nucleus made of every project's colour. Pointing at one stops the orbits
+// and names it; clicking opens it.
+const ORBITS = [
+  { tilt: [1.15, 0, 0.35], r: 1.45, speed: 0.22 },
+  { tilt: [1.15, 0, -1.0], r: 1.65, speed: -0.18 },
+  { tilt: [0.35, 0.9, 0.1], r: 1.85, speed: 0.15 },
+  { tilt: [1.9, -0.6, 0.5], r: 2.05, speed: -0.12 },
+];
+const SEAT = new THREE.Vector3();
+const NUCLEUS = Array.from({ length: 8 }, (_, i) => {
+  const y = 1 - (i / 7) * 2;
+  const r = Math.sqrt(1 - y * y);
+  const a = i * 2.399963;
+  return [Math.cos(a) * r * 0.2, y * 0.2, Math.sin(a) * r * 0.2];
+});
+
+export function HeroOrrery({ projects, hovered, onHover, onPick }) {
+  const calm = useReducedMotion();
+  const tilt = useTilt(calm ? 0 : 0.35);
+  const angle = useRef(0);
+  const orbits = useRef([]);
+  const electrons = useRef([]);
+  const core = useRef([]);
+  useFrame((state, dt) => {
+    if (!calm && hovered === null) angle.current += dt;
+    orbits.current.forEach((g, i) => g && (g.rotation.z = angle.current * ORBITS[i].speed));
+    electrons.current.forEach((g, i) => {
+      if (!g) return;
+      const k = 1 - Math.exp(-dt * 8);
+      const s = g.scale.x + ((hovered === i ? 0.36 : 0.26) - g.scale.x) * k;
+      g.scale.setScalar(s);
+      // Cancel every parent rotation so each miniature stays upright, facing the viewer.
+      g.parent.getWorldQuaternion(g.quaternion).invert();
+    });
+    core.current.forEach((m, i) => {
+      if (!m) return;
+      const k = 1 - Math.exp(-dt * 6);
+      m.position.lerp(SEAT.fromArray(NUCLEUS[i]).multiplyScalar(hovered === i ? 1.9 : 1), k);
+    });
+  });
+  const enter = (i) => (e) => {
+    e.stopPropagation();
+    onHover(i);
+  };
+  const leave = () => onHover(null);
+  return (
+    <group ref={tilt}>
+      <Spin speed={calm ? 0 : 0.25}>
+        {NUCLEUS.map((p, i) => (
+          <mesh key={i} ref={(m) => (core.current[i] = m)} position={p} scale={0.15}>
+            <sphereGeometry args={[1, 32, 32]} />
+            <Accent color={projects[i % projects.length].color} />
+          </mesh>
+        ))}
+      </Spin>
+      {ORBITS.map((o, i) => (
+        <group key={i} rotation={o.tilt}>
+          <mesh>
+            <torusGeometry args={[o.r, 0.005, 8, 200]} />
+            <meshBasicMaterial color={INK} transparent opacity={0.18} />
+          </mesh>
+          <group ref={(g) => (orbits.current[i] = g)}>
+            {projects
+              .map((p, j) => [p, j])
+              .filter(([, j]) => j % ORBITS.length === i)
+              .map(([p, j], n) => {
+                const a = n * Math.PI + i * 0.7;
+                return (
+                  <group key={p.slug} position={[Math.cos(a) * o.r, Math.sin(a) * o.r, 0]}>
+                    <group>
+                      <group ref={(g) => (electrons.current[j] = g)} scale={0.26}>
+                        <MiniShape shape={p.shape} color={p.color} still={calm} />
+                      </group>
+                      <mesh
+                        visible={false}
+                        onPointerOver={enter(j)}
+                        onPointerOut={leave}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          leave();
+                          onPick(p.slug);
+                        }}
+                      >
+                        <sphereGeometry args={[0.36, 12, 12]} />
+                      </mesh>
+                    </group>
+                  </group>
+                );
+              })}
+          </group>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function MiniShape({ shape, color, still }) {
+  const Shape = SHAPES[shape];
+  return <Shape color={color} still={still} delay={0} />;
 }
