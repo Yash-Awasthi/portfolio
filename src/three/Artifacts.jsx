@@ -515,7 +515,135 @@ function Chip({ still, color, delay }) {
   );
 }
 
-const SHAPES = { council: Council, globe: Globe, rings: Rings, phone: Desk, files: Files, pair: Pair, chip: Chip };
+// A key lying along +x: bow at the origin, teeth near x = 0.9, tip at x = 1.2. `mat` makes one
+// material per mesh.
+function KeyBody({ mat }) {
+  return (
+    <group>
+      <mesh>
+        <torusGeometry args={[0.26, 0.075, 24, 64]} />
+        {mat()}
+      </mesh>
+      <RoundedBox args={[0.95, 0.13, 0.08]} radius={0.03} smoothness={3} position={[0.735, 0, 0]}>
+        {mat()}
+      </RoundedBox>
+      <RoundedBox args={[0.09, 0.17, 0.08]} radius={0.02} smoothness={3} position={[0.8, -0.13, 0]}>
+        {mat()}
+      </RoundedBox>
+      <RoundedBox args={[0.09, 0.12, 0.08]} radius={0.02} smoothness={3} position={[0.95, -0.105, 0]}>
+        {mat()}
+      </RoundedBox>
+    </group>
+  );
+}
+
+// Key Router: the real provider key slides into the worker and stays there; a disposable gateway
+// key slides out the other side. Requests cross the worker and change colour as the real key is
+// swapped in, replies stream back, the TTL dial drains, and the expired key turns and retracts.
+const TICKS = 24;
+const TICK_OFF = new THREE.Color('#cfd8db');
+const keyArc = (a, b, h) =>
+  new THREE.QuadraticBezierCurve3(new THREE.Vector3(...a), new THREE.Vector3((a[0] + b[0]) / 2, h, 0.35), new THREE.Vector3(...b));
+
+function KeyGate({ still, color, delay }) {
+  const clock = useClock(delay);
+  const real = useRef();
+  const gate = useRef();
+  const ticks = useRef([]);
+  const asks = useRef();
+  const replies = useRef();
+  const lit = useMemo(() => new THREE.Color(color), [color]);
+  const paths = useMemo(
+    () => ({
+      inbound: keyArc([1.75, 0.2, 0.3], [0, 0.62, 0.2], 0.9),
+      outbound: keyArc([0, 0.62, 0.2], [-1.75, 0.2, 0.3], 0.9),
+      back: keyArc([-1.75, -0.25, 0.3], [1.75, -0.25, 0.3], -0.95),
+    }),
+    [],
+  );
+  useFrame((state) => {
+    const t = still ? 0 : clock(state);
+    if (real.current) real.current.position.x = lerp(-2.1, -1.36, still ? 1 : easeOut(span(t, 0, 1.1)));
+    const p = still ? 0.4 : t > 1 ? ((t - 1) % 9) / 9 : 0;
+    if (gate.current) {
+      const out = easeOut(span(p, 0, 0.12)) * (1 - easeInOut(span(p, 0.86, 0.97)));
+      gate.current.position.x = lerp(0.05, 1.36, out);
+      // Edge-on while inside the worker, so the loop joins without a jump.
+      gate.current.rotation.x = (Math.PI / 2) * Math.max(1 - easeOut(span(p, 0, 0.12)), easeInOut(span(p, 0.8, 0.88)));
+    }
+    const left = TICKS * Math.min(span(p, 0.02, 0.14), 1 - span(p, 0.16, 0.8));
+    ticks.current.forEach((m, i) => m?.color.copy(TICK_OFF).lerp(lit, THREE.MathUtils.clamp(left - i, 0, 1)));
+    // Each request is two beads: the gateway key's colour up to the worker, chrome after the swap.
+    asks.current?.children.forEach((pair, i) => {
+      const k = span(p, 0.2 + i * 0.05, 0.44 + i * 0.05);
+      const [before, after] = pair.children;
+      const first = k < 0.5;
+      before.position.copy(paths.inbound.getPointAt(easeInOut(Math.min(1, k * 2))));
+      after.position.copy(paths.outbound.getPointAt(easeInOut(Math.max(0, k * 2 - 1))));
+      before.visible = !still && k > 0 && first;
+      after.visible = !still && !first && k < 1;
+    });
+    replies.current?.children.forEach((b, i) => {
+      const k = span(p, 0.46 + i * 0.03, 0.66 + i * 0.03);
+      b.position.copy(paths.back.getPointAt(easeInOut(k)));
+      b.visible = !still && k > 0 && k < 1;
+    });
+  });
+  return (
+    <group rotation={[0.28, -0.42, 0]} scale={0.95}>
+      <RoundedBox args={[0.62, 0.95, 0.62]} radius={0.06} smoothness={4}>
+        <Clay />
+      </RoundedBox>
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[s * 0.312, 0, 0]}>
+          <boxGeometry args={[0.012, 0.3, 0.14]} />
+          <meshBasicMaterial color={INK} />
+        </mesh>
+      ))}
+      {Array.from({ length: TICKS }, (_, i) => {
+        const a = Math.PI / 2 - (i / TICKS) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.2, Math.sin(a) * 0.2, 0.313]} rotation={[0, 0, a]}>
+            <boxGeometry args={[0.06, 0.018, 0.006]} />
+            <meshBasicMaterial ref={(m) => (ticks.current[i] = m)} color={color} toneMapped={false} />
+          </mesh>
+        );
+      })}
+      <group ref={real} position={[-1.36, 0, 0]}>
+        <KeyBody mat={() => <Chrome />} />
+      </group>
+      <group ref={gate} position={[1.36, 0, 0]}>
+        <group rotation={[0, 0, Math.PI]}>
+          <KeyBody mat={() => <Accent color={color} />} />
+        </group>
+      </group>
+      <group ref={asks}>
+        {[0, 1, 2].map((i) => (
+          <group key={i}>
+            <mesh scale={0.055}>
+              <sphereGeometry args={[1, 20, 20]} />
+              <Accent color={color} />
+            </mesh>
+            <mesh scale={0.055}>
+              <sphereGeometry args={[1, 20, 20]} />
+              <Chrome />
+            </mesh>
+          </group>
+        ))}
+      </group>
+      <group ref={replies}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <mesh key={i} scale={0.035}>
+            <sphereGeometry args={[1, 16, 16]} />
+            <Accent color={color} />
+          </mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+const SHAPES = { council: Council, globe: Globe, rings: Rings, phone: Desk, files: Files, pair: Pair, chip: Chip, key: KeyGate };
 
 // Turntable swap that never leaves the frame: the current object turns edge-on, the next turns
 // in from the other side and replays its entrance.

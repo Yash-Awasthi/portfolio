@@ -6,7 +6,7 @@ import { Page, Reveal, Words } from '../components/Motion';
 import { Scene } from '../three/Stage';
 import { HeroBlob, SwapArtifact, Artifact } from '../three/Artifacts';
 import { JourneyPath } from '../three/JourneyPath';
-import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS } from '../data';
+import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS, COURSES } from '../data';
 import { useScrollTo } from '../lib/lenis';
 import { ink, wash } from '../lib/tint';
 
@@ -344,6 +344,15 @@ function Experience() {
             <p className="text-[22px] font-medium tracking-tight">{CLOORD.org}</p>
             <p className="mt-1 text-[17px] text-muted">{CLOORD.role}</p>
             <p className="mt-1 font-mono text-[13px] text-muted">{CLOORD.when}</p>
+            <a
+              href={CLOORD.verify}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="link-underline mt-4 inline-flex items-center gap-1 text-[14px]"
+            >
+              Verify internship
+              <ArrowUpRight size={14} aria-hidden />
+            </a>
           </Reveal>
         </div>
         <div className="md:col-span-7 md:pt-4">
@@ -406,6 +415,22 @@ function Credentials() {
           </Reveal>
         ))}
       </div>
+      <Reveal as="dl" className="mt-12 grid gap-8 border-t border-ink/15 pt-6 md:grid-cols-12">
+        {COURSES.map((g) => (
+          <div key={g.group} className={g.items.length > 1 ? 'md:col-span-9' : 'md:col-span-3'}>
+            <dt className="text-[14px] text-muted">
+              {g.group} <span className="font-mono text-[12px]">&nbsp;/&nbsp; {g.when}</span>
+            </dt>
+            <dd className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[14px]">
+              {g.items.map(([name, href]) => (
+                <a key={href} href={href} target="_blank" rel="noopener noreferrer" className="link-underline">
+                  {name}
+                </a>
+              ))}
+            </dd>
+          </div>
+        ))}
+      </Reveal>
     </motion.section>
   );
 }
