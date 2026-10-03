@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { View, PerspectiveCamera, Environment, Lightformer } from '@react-three/drei';
+import { View, PerspectiveCamera } from '@react-three/drei';
 
 // One WebGL context for the whole site; every 3D spot is a View drawn into it.
 export function Stage() {
@@ -12,27 +12,62 @@ export function Stage() {
       eventSource={document.getElementById('root')}
       dpr={[2, 2.5]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      onCreated={({ gl }) => {
+        // the error check reads link status, which waits on the compile and blocked the page for ~1s
+        gl.debug.checkShaderErrors = import.meta.env.DEV;
+      }}
     >
       <View.Port />
     </Canvas>
   );
 }
 
-function Studio() {
-  return (
-    <Environment resolution={256} frames={1}>
-      <color attach="background" args={['#e2eaec']} />
-      <Lightformer form="rect" intensity={1} color="#141a1f" position={[0, -1.2, -4]} scale={[12, 0.6, 1]} />
-      <Lightformer form="rect" intensity={1} color="#141a1f" position={[-4, 2.5, 2]} scale={[0.5, 6, 1]} rotation-y={Math.PI / 2} />
-      <Lightformer intensity={2.2} position={[0, 5, -2]} scale={[10, 2, 1]} rotation-x={Math.PI / 2} />
-      <Lightformer intensity={1.4} position={[-5, 1, 1]} scale={[3, 8, 1]} rotation-y={Math.PI / 2} />
-      <Lightformer intensity={1.4} position={[5, 1, 1]} scale={[3, 8, 1]} rotation-y={-Math.PI / 2} />
-      <Lightformer intensity={0.9} color="#3d5bd9" position={[0, -3, 3]} scale={[6, 1, 1]} />
-      <Lightformer intensity={0.7} color="#2a8f8a" position={[-4, -1, 3]} scale={[1, 5, 1]} rotation-y={Math.PI / 3} />
-      <Lightformer intensity={0.7} color="#5b5fc7" position={[4, 2, 3]} scale={[1, 5, 1]} rotation-y={-Math.PI / 3} />
-      <Lightformer form="ring" intensity={1.6} position={[2, 1, 6]} scale={3} />
-    </Environment>
-  );
+// Studio reflections, baked from the old Lightformer rig: the top half holds RGB mantissas, the bottom
+// half the exponent. Filtering it at load needed a shader whose compile froze the page for ~0.3 s.
+let studio;
+function loadStudio() {
+  studio ??= new Promise((ok, fail) => {
+    const im = new window.Image();
+    im.onload = () => ok(im);
+    im.onerror = fail;
+    im.src = '/studio-env.png';
+  }).then((im) => {
+    const w = im.width;
+    const h = im.height / 2;
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h * 2;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(im, 0, 0);
+    const px = ctx.getImageData(0, 0, w, h * 2).data;
+    const out = new Uint16Array(w * h * 4);
+    const half = THREE.DataUtils.toHalfFloat;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const k = 2 ** (px[((h + y) * w + x) * 4] - 128) / 255;
+        const o = ((h - 1 - y) * w + x) * 4;
+        out[o] = half(px[i] * k);
+        out[o + 1] = half(px[i + 1] * k);
+        out[o + 2] = half(px[i + 2] * k);
+        out[o + 3] = half(1);
+      }
+    }
+    const t = new THREE.DataTexture(out, w, h, THREE.RGBAFormat, THREE.HalfFloatType);
+    t.mapping = THREE.CubeUVReflectionMapping;
+    t.minFilter = t.magFilter = THREE.LinearFilter;
+    t.needsUpdate = true;
+    return t;
+  });
+  return studio;
+}
+
+// Lights `scene` with the studio, then compiles `object` without blocking the main thread.
+export function compileLit(gl, object, camera, scene) {
+  return loadStudio().then((t) => {
+    scene.environment = t;
+    return gl.compileAsync(object, camera, scene);
+  });
 }
 
 // Starts from a sphere of `radius`, then frames the measured content as tightly as it has been seen
@@ -54,7 +89,9 @@ function Fit({ radius, target }) {
   }, [camera, size, radius]);
   useFrame(() => {
     const g = target.current;
-    if (!g || ++tick.current % 10) return;
+    // measure only once the content is shown, with fresh matrices
+    if (!g || !g.parent.visible || ++tick.current % 10) return;
+    g.updateWorldMatrix(true, true);
     BOX.setFromObject(g);
     if (BOX.isEmpty()) return;
     const v = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
@@ -68,16 +105,43 @@ function Fit({ radius, target }) {
   return null;
 }
 
-export function Scene({ className, style, children, fov = 35, radius = 1.9, ...props }) {
+// `bare` drops the default lights for content that brings its own.
+export function Scene({ className, style, children, fov = 35, radius = 1.9, bare = false, ...props }) {
   const content = useRef();
   return (
     <View className={className} style={style} {...props}>
       <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={fov} />
       <Fit radius={radius} target={content} />
-      <Studio />
-      <ambientLight intensity={0.4} />
-      <directionalLight position={[3, 5, 4]} intensity={1.2} />
-      <group ref={content}>{children}</group>
+      {!bare && <ambientLight intensity={0.4} />}
+      {!bare && <directionalLight position={[3, 5, 4]} intensity={1.2} />}
+      <Compiled target={content}>{children}</Compiled>
     </View>
   );
+}
+
+// Content stays hidden until its shaders finish compiling in the background; drawing it first
+// compiled them on the main thread and froze the page.
+function Compiled({ target, children }) {
+  const [ready, setReady] = useState(false);
+  const { gl, camera, scene } = useThree();
+  const compile = () => compileLit(gl, target.current, camera, scene).then(() => setReady(true));
+  return (
+    <group visible={ready}>
+      <group ref={target}>
+        <Suspense fallback={null}>
+          {children}
+          <OnMount run={compile} />
+        </Suspense>
+      </group>
+    </group>
+  );
+}
+
+// Inside Suspense this runs once every sibling has loaded.
+export function OnMount({ run }) {
+  const once = useRef(run);
+  useEffect(() => {
+    once.current();
+  }, []);
+  return null;
 }

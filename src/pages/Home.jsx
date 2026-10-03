@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { motion, useReducedMotion, useScroll, useTransform, useMotionValueEvent, AnimatePresence } from 'motion/react';
 import { ArrowUpRight, ArrowRight, Copy, Check } from '@phosphor-icons/react';
 import { Page, Reveal, Words } from '../components/Motion';
 import { Scene } from '../three/Stage';
-import { HeroBlob, SwapArtifact, Artifact } from '../three/Artifacts';
+import { SwapArtifact, Artifact } from '../three/Artifacts';
+import { Jolly } from '../three/Jolly';
 import { JourneyPath } from '../three/JourneyPath';
 import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS, COURSES } from '../data';
 import { useScrollTo } from '../lib/lenis';
@@ -62,31 +63,28 @@ function Hero() {
       id="top"
       ref={ref}
       data-wash={WASH.hero}
-      className="relative mx-auto grid min-h-[100dvh] max-w-[1400px] grid-rows-[1fr_auto] px-4 pt-24 pb-10 md:px-8"
+      className="relative mx-auto max-w-[1400px] px-4 pt-28 pb-10 md:px-8 md:pt-32"
     >
-      <motion.div
-        className="pointer-events-none relative h-[40vh] md:absolute md:inset-auto md:right-4 md:top-14 md:h-[56%] md:w-[44%]"
-        style={reduce ? undefined : { y: orbY, scale: orbScale }}
+      <div
+        className="relative grid items-end gap-x-6 gap-y-8 md:grid-cols-12 [--fs:clamp(3.4rem,8.6vw,10.5rem)]"
       >
-        <Scene className="h-full w-full" radius={3.0}>
-          <HeroBlob />
-        </Scene>
-      </motion.div>
-      <div className="hidden md:block" />
-      <motion.div
-        className="relative grid gap-10 md:grid-cols-12 md:items-end"
-        style={reduce ? undefined : { y: nameY, opacity: fade }}
-      >
-        <Words
-          as="h1"
-          onLoad
-          delay={0.55}
-          text={PERSON.name}
-          className="display text-[clamp(3.4rem,8.6vw,10.5rem)] md:col-span-9"
-        />
-        <Reveal delay={1} className="flex flex-col gap-6 md:col-span-3 md:pb-3">
-          <p className="max-w-[34ch] text-[17px] leading-relaxed text-muted">{PERSON.intro}</p>
-          <div className="flex flex-wrap gap-3">
+        <motion.div
+          className="order-2 md:order-none md:col-span-7 md:row-start-1"
+          style={reduce ? undefined : { y: nameY, opacity: fade }}
+        >
+          <Words
+            as="h1"
+            onLoad
+            delay={0.55}
+            text={PERSON.name}
+            className="display text-[length:var(--fs)]"
+          />
+        </motion.div>
+        <motion.div
+          className="order-3 md:order-none md:col-span-7 md:row-start-2"
+          style={reduce ? undefined : { y: nameY, opacity: fade }}
+        >
+          <Reveal delay={1} className="flex flex-wrap gap-3">
             <a
               href="#work"
               onClick={(e) => {
@@ -98,9 +96,30 @@ function Hero() {
               View work
               <ArrowRight size={16} className="transition-transform duration-500 group-hover:translate-x-0.5" />
             </a>
+          </Reveal>
+        </motion.div>
+        {/* Jolly spans the name block: top 20px above it, feet on the baseline of its second line; the canvas
+            is taller than that box (room to hop and wave) but takes no layout space */}
+        <motion.div
+          className="pointer-events-none relative order-1 h-[min(38vh,320px)] md:order-none md:col-span-5 md:col-start-8 md:row-span-2 md:row-start-1 md:-mt-28 md:h-auto md:self-stretch"
+          style={reduce ? undefined : { y: orbY, scale: orbScale }}
+        >
+          <div className="absolute inset-0">
+            <Scene id="hero-jolly" className="h-full w-full" style={{ transform: 'translateX(100vw)' }} radius={1.3} bare>
+              <Suspense fallback={null}>
+                <Jolly calm={reduce} />
+              </Suspense>
+            </Scene>
+            <p
+              id="jolly-say"
+              aria-hidden="true"
+              className="absolute left-[14%] top-[27%] origin-bottom-right rounded-2xl rounded-br-sm bg-white px-3.5 py-1.5 text-[15px] font-medium text-ink opacity-0 shadow-sm"
+            >
+              Hi there!
+            </p>
           </div>
-        </Reveal>
-      </motion.div>
+        </motion.div>
+      </div>
     </motion.section>
   );
 }

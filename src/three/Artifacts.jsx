@@ -1,11 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { Float, MeshDistortMaterial, RoundedBox, Instances, Instance, useGLTF } from '@react-three/drei';
+import { Suspense, useMemo, useRef, useState } from 'react';
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
+import { Float, RoundedBox, Instances, Instance, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from 'motion/react';
 import { stagger } from 'animejs';
 import { easeOut, easeInOut, span, lerp } from './ease';
 import { useStory, OUT } from './story';
+import { compileLit, OnMount } from './Stage';
 
 const COBALT = '#3d5bd9';
 const INK = '#141a1f';
@@ -53,48 +54,6 @@ function useTilt(strength = 0.35, still = false) {
     g.rotation.x += (-state.pointer.y * strength * 0.6 - g.rotation.x) * k;
   });
   return ref;
-}
-
-function Spin({ speed = 0.2, axis = 'y', still, children, ...props }) {
-  const ref = useRef();
-  useFrame((_, dt) => {
-    if (!still && ref.current) ref.current.rotation[axis] += dt * speed;
-  });
-  return (
-    <group ref={ref} {...props}>
-      {children}
-    </group>
-  );
-}
-
-const HERO_MOONS = ['#3d5bd9', '#2a8f8a', '#5b5fc7'];
-
-// Reduced motion keeps each object's own story but drops pointer tilt, bobbing and the carousel.
-export function HeroBlob({ still }) {
-  const calm = useReducedMotion();
-  const tilt = useTilt(calm ? 0 : 0.5, still);
-  return (
-    <group ref={tilt}>
-      <Float speed={still || calm ? 0 : 1.4} rotationIntensity={0.6} floatIntensity={0.8}>
-        <mesh scale={1.2}>
-          <icosahedronGeometry args={[1, 64]} />
-          <MeshDistortMaterial color="#e4e5ea" metalness={1} roughness={0.08} distort={still ? 0.25 : 0.38} speed={still ? 0 : 1.6} />
-        </mesh>
-      </Float>
-      {HERO_MOONS.map((c, i) => (
-        <Spin key={c} speed={0.5 - i * 0.12} still={still} rotation={[0.5 + i * 0.5, i * 1.9, 0.3 - i * 0.4]}>
-          <mesh position={[1.75 + i * 0.22, 0, 0]} scale={0.17 - i * 0.03}>
-            <sphereGeometry args={[1, 48, 48]} />
-            <Accent color={c} />
-          </mesh>
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[1.75 + i * 0.22, 0.005, 8, 160]} />
-            <meshBasicMaterial color={c} transparent opacity={0.35} />
-          </mesh>
-        </Spin>
-      ))}
-    </group>
-  );
 }
 
 // Nexus: a council at a round table. A question drops in and splits to five different models;
@@ -1158,14 +1117,10 @@ const TURN = 1;
 export function SwapArtifact({ shape, color, still }) {
   const [cur, setCur] = useState({ shape, color, delay: 0 });
   const [next, setNext] = useState(null);
-  const [warm, setWarm] = useState(0);
   const refs = useRef({});
   const t0 = useRef(null);
   const others = Object.keys(SHAPES).filter((k) => k !== cur.shape && k !== next?.shape);
   useFrame((state) => {
-    // Each other shape draws for a few frames at near-zero size, one at a time, so its shaders
-    // compile before the first hover rather than during a turn.
-    if (warm < others.length * 3) setWarm(warm + 1);
     if (!next) {
       if (shape !== cur.shape) setNext({ shape, color, delay: TURN / 2 });
       return;
@@ -1195,7 +1150,6 @@ export function SwapArtifact({ shape, color, still }) {
   });
   const calm = useReducedMotion();
   if (still || calm) return <Artifact key={shape} shape={shape} color={color} still={still} />;
-  const w = others[Math.floor(warm / 3)];
   return (
     <>
       {[cur, next].filter(Boolean).map((it) => (
@@ -1203,12 +1157,25 @@ export function SwapArtifact({ shape, color, still }) {
           <Artifact shape={it.shape} color={it.color} delay={it.delay} />
         </group>
       ))}
-      {w && (
-        <group key={`warm-${w}`} scale={0.001}>
-          <Artifact shape={w} color={color} still />
-        </group>
-      )}
+      <Warm shapes={others} color={color} />
     </>
+  );
+}
+
+// Every other shape mounts once in a scene that is never drawn, so its shaders compile in the
+// background; drawing them to warm up blocked the main thread for over a second.
+function Warm({ shapes, color }) {
+  const [done, setDone] = useState(false);
+  const off = useMemo(() => new THREE.Scene(), []);
+  const { gl, camera, scene } = useThree();
+  if (done) return null;
+  const compile = () => compileLit(gl, off, camera, scene).then(() => setDone(true));
+  return createPortal(
+    <Suspense fallback={null}>
+      {shapes.map((k) => <Artifact key={k} shape={k} color={color} still />)}
+      <OnMount run={compile} />
+    </Suspense>,
+    off,
   );
 }
 
