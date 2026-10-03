@@ -8,7 +8,7 @@ export function Stage() {
   return (
     <Canvas
       className="!fixed inset-0 !pointer-events-none"
-      style={{ position: 'fixed', zIndex: 0 }}
+      style={{ position: 'fixed', zIndex: 2 }}
       eventSource={document.getElementById('root')}
       dpr={[2, 2.5]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}

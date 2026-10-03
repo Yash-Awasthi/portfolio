@@ -78,3 +78,18 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+@keyframes jolly-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.jolly-pop {
+  transform-origin: bottom left;
+  animation: jolly-pop 0.45s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+}

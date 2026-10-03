@@ -25,6 +25,8 @@ assert.equal(decide({ ...base, lastMove: RUN_END + 0.3 }, RUN_END + 0.3).clip, '
 assert.equal(decide({ ...base, lastMove: HELLO + 1, nx: -1 }, HELLO + 1).clip, 'waveL', 'waves with the hand on the pointer side');
 const hi = decide({ ...base, lastMove: HELLO + 1 }, HELLO + 1);
 assert.ok(hi.clip === 'wave' && hi.say === 1 && hi.joy === 1, 'waves hello with a happy face');
+const out = decide({ ...base, leaving: true }, 30);
+assert.ok(out.clip === 'run' && out.rootYaw === -1.25, 'runs left when sent home from the corner');
 assert.ok(decide({ ...base, calm: true }, 0.5).runX > 0, 'reduced motion still runs in');
 
 assert.ok(at({ nx: 1 }).headYaw + at({ nx: 1 }).rootYaw > 0.5, 'turns toward a pointer on its right');

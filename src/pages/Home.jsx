@@ -1,11 +1,12 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { motion, useReducedMotion, useScroll, useTransform, useMotionValueEvent, AnimatePresence } from 'motion/react';
-import { ArrowUpRight, ArrowRight, Copy, Check } from '@phosphor-icons/react';
+import { ArrowUpRight, ArrowRight, ArrowUp, PushPin, PushPinSlash, Copy, Check } from '@phosphor-icons/react';
 import { Page, Reveal, Words } from '../components/Motion';
 import { Scene } from '../three/Stage';
 import { SwapArtifact, Artifact } from '../three/Artifacts';
 import { Jolly } from '../three/Jolly';
+import { usePhase, isFixed, togglePin, heroBottom, HERO_GONE } from '../three/jollyDock';
 import { JourneyPath } from '../three/JourneyPath';
 import { PERSON, SOCIAL, PROJECTS, JOURNEY, CLOORD, CERTS, COURSES } from '../data';
 import { useScrollTo } from '../lib/lenis';
@@ -44,7 +45,46 @@ export default function Home() {
       <Experience />
       <Credentials />
       <Contact />
+      <Dock />
     </Page>
+  );
+}
+
+// Parked in the bottom-left corner; the stage keeps its place in the hero so nothing shifts.
+const JOLLY_PINNED = 'jolly-pop !fixed bottom-4 left-4 z-[3] h-[240px] w-[170px] max-md:h-[170px] max-md:w-[122px]';
+
+function Dock() {
+  const phase = usePhase();
+  const scrollTo = useScrollTo();
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    const on = () => setAway(heroBottom() < HERO_GONE);
+    on();
+    window.addEventListener('scroll', on, { passive: true });
+    return () => window.removeEventListener('scroll', on);
+  }, []);
+  const pinned = phase === 'pinned';
+  const show = away || phase !== 'hero';
+  const btn = 'inline-flex h-10 items-center justify-center gap-2 rounded-full px-3.5 text-[14px] transition-transform active:scale-95';
+  return (
+    <div
+      className={`fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full border border-ink/10 bg-paper/80 p-1.5 shadow-lg backdrop-blur-md transition duration-500 ${show ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'}`}
+    >
+      <button
+        type="button"
+        onClick={togglePin}
+        disabled={phase === 'leaving' || phase === 'gap'}
+        aria-pressed={pinned}
+        className={`${btn} ${pinned ? 'bg-ink text-paper' : 'text-ink hover:bg-ink/5'}`}
+      >
+        {pinned ? <PushPinSlash size={18} /> : <PushPin size={18} />}
+        <span className="hidden sm:inline">{pinned ? 'Send Jolly home' : 'Pin Jolly'}</span>
+        <span className="sr-only sm:hidden">{pinned ? 'Send Jolly home' : 'Pin Jolly'}</span>
+      </button>
+      <button type="button" onClick={() => scrollTo('top')} aria-label="Back to top" className={`${btn} w-10 bg-ink px-0 text-paper`}>
+        <ArrowUp size={18} />
+      </button>
+    </div>
   );
 }
 
@@ -55,8 +95,7 @@ function Hero() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const nameY = useTransform(scrollYProgress, [0, 1], [0, -140]);
   const fade = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const orbY = useTransform(scrollYProgress, [0, 1], [0, 220]);
-  const orbScale = useTransform(scrollYProgress, [0, 1], [1, 0.72]);
+  const phase = usePhase();
 
   return (
     <motion.section
@@ -100,12 +139,9 @@ function Hero() {
         </motion.div>
         {/* Jolly spans the name block: top 20px above it, feet on the baseline of its second line; the canvas
             is taller than that box (room to hop and wave) but takes no layout space */}
-        <motion.div
-          className="pointer-events-none relative order-1 h-[min(38vh,320px)] md:order-none md:col-span-5 md:col-start-8 md:row-span-2 md:row-start-1 md:-mt-28 md:h-auto md:self-stretch"
-          style={reduce ? undefined : { y: orbY, scale: orbScale }}
-        >
+        <div className="pointer-events-none relative order-1 h-[min(38vh,320px)] md:order-none md:col-span-5 md:col-start-8 md:row-span-2 md:row-start-1 md:-mt-28 md:h-auto md:self-stretch">
           <div className="absolute inset-0">
-            <Scene id="hero-jolly" className="h-full w-full" style={{ transform: 'translateX(100vw)' }} radius={1.3} bare>
+            <Scene id="hero-jolly" className={isFixed(phase) ? JOLLY_PINNED : 'h-full w-full'} style={{ transform: 'translateX(100vw)' }} radius={1.3} bare>
               <Suspense fallback={null}>
                 <Jolly calm={reduce} />
               </Suspense>
@@ -118,7 +154,7 @@ function Hero() {
               Hi there!
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
     </motion.section>
   );

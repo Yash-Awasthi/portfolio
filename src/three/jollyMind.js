@@ -134,6 +134,15 @@ export function decide(s, t) {
   // reduced motion keeps every reaction but halves the oscillations and drops the jumps
   const amp = s.calm ? 0.5 : 1;
 
+  if (s.leaving) {
+    // running off the left edge when the hero comes back into view
+    play('run');
+    out.rootYaw = -1.25;
+    out.spinePitch = 0.15;
+    out.eyeX = -0.8;
+    out.joy = 0.4;
+    return out;
+  }
   if (t < RUN_END) {
     // runs in from the right edge facing left, skids, and turns to the visitor as he stops
     out.runX = Math.pow(1 - t / RUN_END, 1.6);

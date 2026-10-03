@@ -5,6 +5,7 @@ import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js
 import * as THREE from 'three';
 import { CHANNELS, CLIPS, LOOPS, RUN_END, decide, touchFor } from './jollyMind';
 import { compileLit } from './Stage';
+import { getPhase, setPhase, heroBottom, HERO_BACK } from './jollyDock';
 
 const URL = '/jolly.glb';
 const SHELLS = 48;
@@ -433,6 +434,7 @@ export function Jolly({ calm }) {
       on = false;
     };
   }, [gl, camera, stage, model]);
+  useEffect(() => () => setPhase('hero'), []);
   const mind = useRef({ nx: 0, ny: 0, touch: null, lastMove: 0, clicks: 0, clickAt: null, moved: false, clicked: false, tx: 100, press: null, grab: null, dragged: false, turning: 0, touchUntil: 0, ndc: new THREE.Vector2(), cur: null, blinkAt: 2, t0: null, view: 1, wave: [], hold: null, live: new Set(), fade: 0.3 });
   useLayoutEffect(() => {
     live.current = model;
@@ -514,7 +516,7 @@ export function Jolly({ calm }) {
     const io = new IntersectionObserver(
       ([en]) => {
         // the run-in slides the stage in from off screen, which is not a scroll
-        if (now() < RUN_END + 0.5) return;
+        if (now() < RUN_END + 0.5 || getPhase() !== 'hero') return;
         m.view = en.intersectionRatio;
         if (m.view < 0.35 && !m.gone) {
           m.gone = true;
@@ -556,6 +558,34 @@ export function Jolly({ calm }) {
     const { rig, nodes, face, mixer, clips } = live.current;
     const m = mind.current;
     m.t0 ??= state.clock.elapsedTime;
+    // pinned in the corner he runs off the left edge when the hero returns, then re-enters as the big one
+    const wall = state.clock.elapsedTime;
+    const pinEl = document.getElementById('hero-jolly');
+    if (getPhase() === 'pinned' && heroBottom() > HERO_BACK) setPhase('leaving');
+    const phase = getPhase();
+    if (phase === 'leaving' && m.phase !== 'leaving') {
+      m.leaveAt = wall;
+      m.leaveX = (pinEl?.getBoundingClientRect().right ?? 200) + 24;
+    }
+    m.phase = phase;
+    const gone = wall - (m.leaveAt ?? 0);
+    if (phase === 'leaving' && pinEl) {
+      const k = Math.min(1, gone / 0.6);
+      pinEl.style.transform = calm ? '' : `translateX(${-m.leaveX * k * k}px)`;
+      pinEl.style.opacity = String(1 - k * k);
+      if (gone >= 0.6) {
+        pinEl.style.transform = 'translateX(100vw)';
+        setPhase('gap');
+      }
+    } else if (phase === 'gap' && gone >= 0.9) {
+      Object.assign(m, { t0: wall, clicks: 0, clickAt: null, touch: null, lastMove: 0, gone: false, byeAt: undefined, hiAt: undefined, wakeAt: undefined, view: 1, tx: 100 });
+      if (m.cur) {
+        m.cur.runX = 1;
+        m.vel.runX = 0;
+      }
+      if (pinEl) pinEl.style.opacity = '';
+      setPhase('hero');
+    }
     const t = state.clock.elapsedTime - m.t0;
     if (m.moved || m.clicked || m.hold) {
       RAY.setFromCamera(m.ndc, state.camera);
@@ -593,7 +623,7 @@ export function Jolly({ calm }) {
     if (m.touch && !m.over && t > m.touchUntil) m.touch = null;
     m.turning = m.cur ? Math.abs((m.prev?.rootYaw ?? 0) - m.cur.rootYaw) * 6 : 0;
     m.tickle = t < (m.tickleUntil ?? -1);
-    const target = decide({ ...m, calm }, t);
+    const target = decide({ ...m, calm, leaving: m.phase === 'leaving' && !calm }, t);
     m.prev = target;
     if (!m.cur) {
       m.cur = { ...target };
@@ -764,7 +794,7 @@ export function Jolly({ calm }) {
     const say = document.getElementById('jolly-say');
     if (say) {
       const k = THREE.MathUtils.clamp(p.say, 0, 1);
-      say.style.opacity = k;
+      say.style.opacity = m.phase === 'hero' || m.phase == null ? k : 0;
       say.style.transform = `scale(${0.6 + 0.4 * k})`;
       if (target.say && say.textContent !== target.line) say.textContent = target.line;
     }
