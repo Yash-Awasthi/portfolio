@@ -222,7 +222,6 @@ const BUBBLE_PUFFS = [
 ];
 const BLINK_EVERY = [2.5, 5.5];
 const SPRING = { base: [95, 13], runX: [400, 40], say: [40, 10], joy: [60, 11], blus: [30, 11], ooh: [200, 22], pout: [120, 16], lid: [300, 35], squi: [200, 24], eyeX: [220, 22], eyeY: [220, 22], head: [130, 16], hand: [60, 8.5], bubb: [18, 8], squa: [300, 14], root: [45, 9], lift: [70, 9], legR: [160, 15], legL: [160, 15] };
-const ONE = new THREE.Vector3(1, 1, 1);
 const Q = new THREE.Quaternion();
 const E = new THREE.Euler();
 const P = new THREE.Vector3();
