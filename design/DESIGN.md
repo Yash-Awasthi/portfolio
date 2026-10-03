@@ -34,6 +34,7 @@ Each work row is a stop in its project's tint; the journey has one stop per mile
 | Case Files | `#3f7f9f` | `#deeaef` |
 | Ping | `#6a78d1` | `#e5e8f6` |
 | RISC-V attn | `#237a94` | `#d9eaee` |
+| Key Router | `#3367a8` | `#dfe6f1` |
 
 Accents in small text are mixed 72% toward ink (`ink()` in `src/lib/tint.js`) to keep contrast.
 
@@ -95,6 +96,7 @@ zero or fading; things move into place. On project pages the entrance waits 0.9 
 | Case Files | Stack of files | Fans open, top file slides out, closes |
 | Ping | Two phones | Turn toward each other, the card arcs across, both screens confirm, turn back |
 | RISC-V attn | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
+| Key Router | Worker block, chrome key, accent key | Real key slides in and stays; gateway key turns flat and slides out; requests cross the block and change colour; replies stream back; the TTL dial drains; the key turns edge-on and retracts |
 
 On the home page, switching projects is a turntable: the current object turns edge-on and the
 next turns in from the other side, replaying its entrance, all inside the frame.
