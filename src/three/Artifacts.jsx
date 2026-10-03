@@ -684,39 +684,133 @@ function Desk({ still, color, delay }) {
   );
 }
 
-// Case Files: the stack fans open, the case file on top slides out to be read, then everything closes.
-const SHEETS = 5;
+// Case Files: every player's case file carries its own seal, derived from their seed. An answer
+// slips out of one file into another; the magnifier reads the slip's seal and a thread runs back
+// to the file it came from.
+const FOLDER_X = [-0.95, 0, 0.95];
+// Seal i lights the dots of a 3x3 grid named by its bits; each file's pattern is unique.
+const SEALS = [0b101010011, 0b011100110, 0b110001101];
+const sealDots = (bits) => Array.from({ length: 9 }, (_, d) => [((d % 3) - 1) * 0.07, (1 - Math.floor(d / 3)) * 0.07, (bits >> d) & 1]);
+const SLIP_HOME = new THREE.Vector3(FOLDER_X[0], 0.05, 0);
+const SLIP_UP = new THREE.Vector3(FOLDER_X[0], 0.72, 0.1);
+const SLIP_COPY = new THREE.Vector3(FOLDER_X[2] - 0.05, 0.05, 0.12);
+const LENS_AWAY = new THREE.Vector3(1.5, 0.9, 0.5);
+const LENS_ON = new THREE.Vector3(FOLDER_X[2] - 0.05, 0.05, 0.4);
+const SEAL_0 = new THREE.Vector3(FOLDER_X[0] + 0.2, 0.3, 0.05);
+const THREAD_N = 48;
+const THREAD = new Float32Array(
+  new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(SLIP_COPY.x, SLIP_COPY.y + 0.12, SLIP_COPY.z + 0.02),
+    new THREE.Vector3(0, 0.95, 0.35),
+    new THREE.Vector3(SEAL_0.x, SEAL_0.y + 0.1, SEAL_0.z + 0.04),
+  )
+    .getPoints(THREAD_N - 1)
+    .flatMap((v) => v.toArray()),
+);
+
+const filesInit = () => ({ folders: FOLDER_X.map(() => ({ up: 0 })), out: 0, go: 0, lens: 0, thread: 0, pulse: 0, back: 0 });
+
+function filesStory({ intro, loop }, s) {
+  intro.add(s.folders, { up: [0, 1], duration: 900, ease: OUT, delay: stagger(110) });
+  loop
+    .add(s, { out: [0, 1], duration: 650, ease: OUT })
+    .add(s, { go: [0, 1], duration: 1000 })
+    .add(s, { lens: [0, 1], duration: 850 }, '+=150')
+    .add(s, { thread: [0, 1], duration: 750, ease: 'linear' })
+    .add(s, { pulse: [0, 1], duration: 300, ease: OUT })
+    .add(s, { pulse: 0, duration: 450 }, '+=250')
+    .add(s, { lens: 0, thread: 0, duration: 650 }, '+=500')
+    .add(s, { back: [0, 1], duration: 1000 })
+    .add(s, { out: 0, go: 0, back: 0, duration: 1 }, '+=300');
+}
 
 function Files({ still, color, delay }) {
-  const clock = useClock(delay);
-  const sheets = useRef([]);
-  useFrame((state) => {
-    const t = still ? 0 : clock(state);
-    const p = (t % 7) / 7;
-    const fan = still ? 0.8 : easeInOut(span(p, 0.08, 0.35)) * (1 - easeInOut(span(p, 0.78, 0.98)));
-    const pull = easeOut(span(p, 0.38, 0.55)) * (1 - easeInOut(span(p, 0.68, 0.8)));
-    sheets.current.forEach((g, i) => {
-      if (!g) return;
-      const top = i === SHEETS - 1;
-      g.rotation.z = lerp(0, -0.42 + i * 0.2, fan);
-      g.position.set(top ? pull * 0.55 : 0, top ? pull * 0.75 : 0, i * 0.08 + (top ? pull * 0.25 : 0));
-    });
+  const s = useStory(filesInit, filesStory, { delay, still, at: 0.5 });
+  const folders = useRef([]);
+  const slip = useRef();
+  const lens = useRef();
+  const thread = useRef();
+  const seal0 = useRef();
+  useFrame(() => {
+    folders.current.forEach((g, i) => g && (g.position.y = lerp(-1.6, 0, s.folders[i].up)));
+    if (slip.current) {
+      // Out of its own file, across to another, and later home again over the same arc.
+      const across = s.back > 0 ? 1 - s.back : s.go;
+      const at = slip.current.position;
+      at.lerpVectors(SLIP_HOME, SLIP_UP, s.out);
+      if (across > 0) {
+        at.lerpVectors(SLIP_UP, SLIP_COPY, across);
+        at.y += Math.sin(across * Math.PI) * 0.35;
+      }
+      if (s.back >= 1) at.copy(SLIP_HOME);
+    }
+    lens.current?.position.lerpVectors(LENS_AWAY, LENS_ON, s.lens);
+    thread.current?.geometry.setDrawRange(0, Math.floor(s.thread * THREAD_N));
+    if (seal0.current) seal0.current.position.z = 0.025 + s.pulse * 0.12;
   });
   return (
-    <group rotation={[-0.55, 0.15, 0]}>
-      {Array.from({ length: SHEETS }, (_, i) => {
-        const top = i === SHEETS - 1;
-        return (
-          <group key={i} ref={(g) => (sheets.current[i] = g)}>
-            <RoundedBox args={[1.9, 1.35, 0.03]} radius={0.02} smoothness={3}>
-              {top ? <Accent color={color} /> : <Clay />}
-            </RoundedBox>
-            <RoundedBox args={[0.55, 0.18, 0.03]} radius={0.02} smoothness={3} position={[-0.55, 0.72, 0]}>
-              {top ? <Accent color={color} /> : <Clay />}
-            </RoundedBox>
+    <group rotation={[-0.12, -0.35, 0]} scale={0.95}>
+      {FOLDER_X.map((x, i) => (
+        <group key={i} ref={(g) => (folders.current[i] = g)} position={[x, 0, -i * 0.05]} rotation={[0, 0, (i - 1) * -0.06]}>
+          <RoundedBox args={[0.8, 1.05, 0.04]} radius={0.02} smoothness={3}>
+            <Clay />
+          </RoundedBox>
+          <RoundedBox args={[0.3, 0.12, 0.04]} radius={0.02} smoothness={3} position={[-0.2, 0.56, 0]}>
+            <Clay />
+          </RoundedBox>
+          <mesh position={[-0.12, 0.38, 0.022]}>
+            <planeGeometry args={[0.38, 0.035]} />
+            <meshBasicMaterial color={INK} />
+          </mesh>
+          {[0, 1, 2, 3].map((r) => (
+            <mesh key={r} position={[-0.08 - (r % 2) * 0.05, 0.1 - r * 0.11, 0.022]}>
+              <planeGeometry args={[0.5 - (r % 2) * 0.1, 0.025]} />
+              <meshBasicMaterial color="#8fb3c9" />
+            </mesh>
+          ))}
+          <group ref={i === 0 ? seal0 : undefined} position={[0.2, 0.3, 0.025]}>
+            {sealDots(SEALS[i]).map(([dx, dy, on], d) => (
+              <mesh key={d} position={[dx, dy, 0]}>
+                <circleGeometry args={[0.024, 16]} />
+                <meshBasicMaterial color={on ? color : '#cfd8db'} toneMapped={false} />
+              </mesh>
+            ))}
           </group>
-        );
-      })}
+        </group>
+      ))}
+      <group ref={slip} position={SLIP_HOME.toArray()}>
+        <RoundedBox args={[0.36, 0.24, 0.015]} radius={0.01} smoothness={2}>
+          <meshPhysicalMaterial color="#ffffff" roughness={0.4} clearcoat={0.5} />
+        </RoundedBox>
+        <group position={[0.08, 0, 0.009]} scale={0.8}>
+          {sealDots(SEALS[0]).map(([dx, dy, on], d) => (
+            <mesh key={d} position={[dx, dy, 0]}>
+              <circleGeometry args={[0.024, 16]} />
+              <meshBasicMaterial color={on ? color : '#cfd8db'} toneMapped={false} />
+            </mesh>
+          ))}
+        </group>
+        <mesh position={[-0.1, 0.04, 0.009]}>
+          <planeGeometry args={[0.1, 0.025]} />
+          <meshBasicMaterial color={INK} />
+        </mesh>
+      </group>
+      <group ref={lens} position={LENS_AWAY.toArray()} rotation={[0, 0, -0.6]}>
+        <mesh>
+          <torusGeometry args={[0.2, 0.03, 16, 64]} />
+          <Chrome />
+        </mesh>
+        <mesh position={[0, -0.36, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.32, 16]} />
+          <Accent color={color} />
+        </mesh>
+      </group>
+      <line ref={thread}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[THREAD, 3]} />
+        </bufferGeometry>
+        <lineBasicMaterial color={color} toneMapped={false} />
+      </line>
     </group>
   );
 }
