@@ -204,13 +204,6 @@ export const JOURNEY = [
     body: "Replicated and extended MIT Media Lab's TARF sea-to-air speech system. Built a socket pipeline under 200 ms latency and improved signal quality by 8-12 dB.",
   },
   {
-    when: 'Jun - Sep 2026',
-    color: '#6a78d1',
-    title: 'Research intern, Consumer Psychology',
-    place: 'IIM Raipur',
-    body: 'Working paper on whether human-versus-AI influencer comparisons measure what they claim. Audited 19 published studies and replicated 12 statistics within 0.005 in a reproducible R pipeline.',
-  },
-  {
     when: 'Jul - Sep 2026',
     color: '#4a7fc1',
     title: 'App development intern',

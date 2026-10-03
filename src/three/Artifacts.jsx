@@ -788,25 +788,26 @@ const FINGER_X = [-0.18, -0.06, 0.06, 0.18];
 const FINGER_LEN = [0.36, 0.44, 0.42, 0.32];
 // Peace sign: index and middle stay up; ring, little finger and thumb fold.
 const FOLDS = [1, 0, 0, 1, 1];
+const HAND = '#3b4f5a';
 
 function Hand({ setFinger, setRing }) {
   return (
     <group>
       <RoundedBox args={[0.5, 0.52, 0.14]} radius={0.07} smoothness={4}>
-        <Clay />
+        <Clay color={HAND} />
       </RoundedBox>
       {FINGER_X.map((x, i) => (
         <group key={i} ref={(g) => setFinger(i, g)} position={[x, 0.24, 0]}>
           <mesh position={[0, FINGER_LEN[3 - i] / 2 + 0.02, 0]}>
             <capsuleGeometry args={[0.052, FINGER_LEN[3 - i], 6, 12]} />
-            <Clay />
+            <Clay color={HAND} />
           </mesh>
         </group>
       ))}
       <group ref={(g) => setFinger(4, g)} position={[-0.25, -0.05, 0]} rotation={[0, 0, 0.75]}>
         <mesh position={[0, 0.14, 0]}>
           <capsuleGeometry args={[0.052, 0.2, 6, 12]} />
-          <Clay />
+          <Clay color={HAND} />
         </mesh>
       </group>
       <mesh position={[0, 0.1, -0.12]}>
