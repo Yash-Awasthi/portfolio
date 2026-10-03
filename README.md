@@ -1,7 +1,7 @@
 # Portfolio
 
 Personal site for Yash Vaibhav Awasthi. React 19, Vite, Tailwind CSS 4, React Three Fiber and drei
-for the 3D layer, Motion for transitions and Lenis for scrolling.
+for the 3D layer, anime.js for the 3D stories, Motion for transitions and Lenis for scrolling.
 
 ## Develop
 
