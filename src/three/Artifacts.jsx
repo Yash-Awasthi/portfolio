@@ -815,46 +815,114 @@ function Files({ still, color, delay }) {
   );
 }
 
-// Ping: two phones turn to face each other, the card crosses between them, both screens confirm,
-// and they turn away again.
+// Ping: above each phone a hand closes from open into the same sign. Both lock, the same six-digit
+// check lights on both screens, the phones turn to each other and the sealed card crosses.
 const SCREEN_IDLE = new THREE.Color('#eef3f3');
+const DIGIT_DIM = new THREE.Color('#cfd8db');
+const FINGER_X = [-0.18, -0.06, 0.06, 0.18];
+const FINGER_LEN = [0.36, 0.44, 0.42, 0.32];
+// Peace sign: index and middle stay up; ring, little finger and thumb fold.
+const FOLDS = [1, 0, 0, 1, 1];
+
+function Hand({ setFinger, setRing }) {
+  return (
+    <group>
+      <RoundedBox args={[0.5, 0.52, 0.14]} radius={0.07} smoothness={4}>
+        <Clay />
+      </RoundedBox>
+      {FINGER_X.map((x, i) => (
+        <group key={i} ref={(g) => setFinger(i, g)} position={[x, 0.24, 0]}>
+          <mesh position={[0, FINGER_LEN[3 - i] / 2 + 0.02, 0]}>
+            <capsuleGeometry args={[0.052, FINGER_LEN[3 - i], 6, 12]} />
+            <Clay />
+          </mesh>
+        </group>
+      ))}
+      <group ref={(g) => setFinger(4, g)} position={[-0.25, -0.05, 0]} rotation={[0, 0, 0.75]}>
+        <mesh position={[0, 0.14, 0]}>
+          <capsuleGeometry args={[0.052, 0.2, 6, 12]} />
+          <Clay />
+        </mesh>
+      </group>
+      <mesh position={[0, 0.1, -0.12]}>
+        <torusGeometry args={[0.5, 0.012, 8, 96]} />
+        <meshBasicMaterial ref={setRing} color="#cfd8db" toneMapped={false} />
+      </mesh>
+    </group>
+  );
+}
+
+const pairInit = () => ({ curl: 0, lock: 0, digits: Array.from({ length: 6 }, () => ({ on: 0 })), face: 0, send: 0, glow: 0 });
+
+function pairStory({ loop }, s) {
+  loop
+    .add(s, { curl: [0, 1], duration: 900 }, 300)
+    .add(s, { lock: [0, 1], duration: 300, ease: OUT }, 1200)
+    .add(s.digits, { on: [0, 1], duration: 220, delay: stagger(90) }, 1500)
+    .add(s, { face: [0, 1], duration: 700 }, 2400)
+    .add(s, { send: [0, 1], duration: 1300 }, 3100)
+    .add(s, { glow: [0, 1], duration: 250, ease: OUT }, 4300)
+    .add(s, { glow: 0, duration: 500 }, 4900)
+    .add(s, { face: 0, lock: 0, duration: 700 }, 5400)
+    .add(s.digits, { on: 0, duration: 300 }, 5400)
+    .add(s, { curl: 0, send: 0, duration: 800 }, 5700);
+}
 
 function Pair({ still, color, delay }) {
-  const clock = useClock(delay);
-  const left = useRef();
-  const right = useRef();
+  const s = useStory(pairInit, pairStory, { delay, still, at: 0.42 });
+  const phones = useRef([]);
+  const screens = useRef([]);
+  const fingers = useRef([]);
+  const rings = useRef([]);
+  const digits = useRef([]);
   const beads = useRef();
-  const screenA = useRef();
-  const screenB = useRef();
   const lit = useMemo(() => new THREE.Color(color), [color]);
   const curve = useMemo(
     () =>
-      new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.72, 0.15, 0.25), new THREE.Vector3(0, 1.15, 0.45), new THREE.Vector3(0.72, 0.15, 0.25)),
+      new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.68, -0.2, 0.25), new THREE.Vector3(0, 0.55, 0.45), new THREE.Vector3(0.68, -0.2, 0.25)),
     [],
   );
-  useFrame((state) => {
-    const t = still ? 0 : clock(state);
-    const p = (t % 7) / 7;
-    const face = still ? 1 : easeInOut(span(p, 0.04, 0.22)) * (1 - easeInOut(span(p, 0.84, 0.98)));
-    const turn = lerp(0.12, 0.62, face);
-    if (left.current) left.current.rotation.y = turn;
-    if (right.current) right.current.rotation.y = -turn;
+  useFrame(() => {
+    const turn = lerp(0.12, 0.6, s.face);
+    phones.current.forEach((g, p) => g && (g.rotation.y = p ? -turn : turn));
+    fingers.current.forEach((g, n) => {
+      if (!g) return;
+      const i = n % 5;
+      const fold = FOLDS[i] * s.curl;
+      if (i === 4) g.rotation.set(0, fold * 1.1, 0.75 - fold * 0.9);
+      else {
+        g.rotation.x = -fold * 2.4;
+        // The two raised fingers spread into a V.
+        g.rotation.z = FOLDS[i] ? 0 : s.curl * (i === 1 ? 0.22 : -0.22);
+      }
+    });
+    rings.current.forEach((r) => r?.color.copy(DIGIT_DIM).lerp(lit, s.lock));
+    digits.current.forEach((m, i) => m?.color.copy(DIGIT_DIM).lerp(lit, s.digits[i % 6].on));
     beads.current?.children.forEach((b, i) => {
-      const k = span(p, 0.26 + i * 0.035, 0.56 + i * 0.035);
+      const k = span(s.send, i * 0.06, 0.7 + i * 0.06);
       b.position.copy(curve.getPointAt(easeInOut(k)));
       b.visible = !still && k > 0 && k < 1;
     });
-    const glow = easeOut(span(p, 0.6, 0.66)) * (1 - easeInOut(span(p, 0.74, 0.84)));
-    for (const s of [screenA.current, screenB.current]) s?.color.copy(SCREEN_IDLE).lerp(lit, glow);
+    screens.current.forEach((sc) => sc?.color.copy(SCREEN_IDLE).lerp(lit, s.glow));
   });
   return (
-    <group position={[0, -0.25, 0]}>
-      <group ref={left} position={[-1.05, 0, 0]}>
-        <Handset scale={0.85} screen="#eef3f3" screenRef={screenA} />
-      </group>
-      <group ref={right} position={[1.05, 0, 0]}>
-        <Handset scale={0.85} screen="#eef3f3" screenRef={screenB} />
-      </group>
+    <group position={[0, -0.45, 0]} scale={0.85}>
+      {[-1, 1].map((side, p) => (
+        <group key={side}>
+          <group ref={(g) => (phones.current[p] = g)} position={[side * 0.95, -0.15, 0]}>
+            <Handset scale={0.68} screen="#eef3f3" screenRef={(m) => (screens.current[p] = m)} />
+            {Array.from({ length: 6 }, (_, d) => (
+              <mesh key={d} position={[-0.2 + d * 0.08, 0.25, 0.04]}>
+                <boxGeometry args={[0.055, 0.09, 0.01]} />
+                <meshBasicMaterial ref={(m) => (digits.current[p * 6 + d] = m)} color="#cfd8db" toneMapped={false} />
+              </mesh>
+            ))}
+          </group>
+          <group position={[side * 0.95, 1.25, 0.1]} scale={1.0} rotation={[0.15, side * -0.3, 0]}>
+            <Hand setFinger={(i, g) => (fingers.current[p * 5 + i] = g)} setRing={(m) => (rings.current[p] = m)} />
+          </group>
+        </group>
+      ))}
       <group ref={beads}>
         {[0, 1, 2, 3, 4, 5].map((i) => (
           <mesh key={i} scale={0.06}>
