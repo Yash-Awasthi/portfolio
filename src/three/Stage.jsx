@@ -10,7 +10,7 @@ export function Stage() {
       className="!fixed inset-0 !pointer-events-none"
       style={{ position: 'fixed', zIndex: 0 }}
       eventSource={document.getElementById('root')}
-      dpr={[1.5, 2]}
+      dpr={[2, 2.5]}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
     >
       <View.Port />

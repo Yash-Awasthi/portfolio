@@ -1,0 +1,11 @@
+# Yash Vaibhav Awasthi
+
+> Software engineer (B.Tech CSE, NIT Raipur, CGPA 9.26) building backends, AI systems and mobile apps that keep working when things fail.
+
+The complete, structured CV is a single JSON document: https://yash-portfolio-nine-navy.vercel.app/cv.json
+It covers education, skills, experience, projects with verifiable numbers, certifications, achievements and positions, with links to source code and proofs.
+
+- Site: https://yash-portfolio-nine-navy.vercel.app
+- Resume (PDF): https://yash-portfolio-nine-navy.vercel.app/Yash-Vaibhav-Awasthi-Resume.pdf
+- GitHub: https://github.com/Yash-Awasthi
+- Email: yashvaibhav.job@gmail.com

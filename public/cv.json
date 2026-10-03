@@ -1,0 +1,555 @@
+{
+  "about_this_file": "Machine-readable master CV of Yash Vaibhav Awasthi, served for bots and automated tools. Same content as the site and the resume PDF. Contact by email.",
+  "updated": "2026-10-03",
+  "person": {
+    "name": "Yash Vaibhav Awasthi",
+    "headline": "Software engineer building backends, AI systems and mobile apps that keep working when things fail.",
+    "location": "Raipur, Chhattisgarh, India (open to relocate)",
+    "email": "yashvaibhav.job@gmail.com",
+    "website": "https://yash-portfolio-nine-navy.vercel.app",
+    "resume_pdf": "https://yash-portfolio-nine-navy.vercel.app/Yash-Vaibhav-Awasthi-Resume.pdf",
+    "profiles": {
+      "github": "https://github.com/Yash-Awasthi",
+      "linkedin": "https://www.linkedin.com/in/yash-vaibhav-awasthi-909a62293",
+      "codeforces": "https://codeforces.com/profile/Names_Yash",
+      "codechef": "https://www.codechef.com/users/yash_1203",
+      "leetcode": "https://leetcode.com/u/mynameisyash/",
+      "geeksforgeeks": "https://www.geeksforgeeks.org/profile/yashvawasthi",
+      "discord": "https://discord.com/users/yashawasthi_",
+      "telegram": "https://t.me/Y1203A"
+    }
+  },
+  "education": [
+    {
+      "degree": "B.Tech, Computer Science and Engineering",
+      "institution": "National Institute of Technology Raipur, Chhattisgarh",
+      "period": "2024 – 2028",
+      "score": "CGPA 9.26 / 10"
+    },
+    {
+      "degree": "AISSCE (Class XII)",
+      "institution": "Kendriya Vidyalaya, Mahasamund, Chhattisgarh",
+      "period": "2023",
+      "score": "90.2%"
+    },
+    {
+      "degree": "AISSCE (Class X)",
+      "institution": "Kendriya Vidyalaya, Damoh, Madhya Pradesh",
+      "period": "2021",
+      "score": "98.2%"
+    }
+  ],
+  "skills": {
+    "Languages": [
+      "C++",
+      "C",
+      "Java",
+      "Python",
+      "TypeScript",
+      "JavaScript",
+      "Kotlin",
+      "SQL",
+      "Bash",
+      "R"
+    ],
+    "Frontend": [
+      "React",
+      "Next.js",
+      "Astro",
+      "Vite",
+      "Tailwind CSS",
+      "Three.js",
+      "globe.gl",
+      "WebCodecs"
+    ],
+    "Backend": [
+      "Node.js",
+      "FastAPI",
+      "Fastify",
+      "REST",
+      "WebSocket",
+      "Server-Sent Events",
+      "BullMQ",
+      "QUIC (iroh)"
+    ],
+    "Databases": [
+      "PostgreSQL",
+      "Supabase",
+      "pgvector",
+      "Redis",
+      "SQLite / D1",
+      "DynamoDB",
+      "Drizzle ORM"
+    ],
+    "Cloud & DevOps": [
+      "AWS (Lambda, S3, DynamoDB, Cognito, AppSync)",
+      "Cloudflare Workers",
+      "Docker",
+      "GitHub Actions"
+    ],
+    "Infrastructure": [
+      "Kubernetes",
+      "Helm",
+      "Terraform",
+      "OpenTelemetry",
+      "Prometheus",
+      "Grafana",
+      "gVisor / Kata"
+    ],
+    "AI / ML": [
+      "PyTorch",
+      "Transformers",
+      "LoRA / PEFT",
+      "ModernBERT",
+      "probability calibration",
+      "MediaPipe"
+    ],
+    "LLM Systems": [
+      "multi-agent orchestration",
+      "hybrid RAG",
+      "MCP",
+      "prompt-injection defence",
+      "provider failover"
+    ],
+    "Mobile": [
+      "Android (Kotlin, Jetpack Compose, Room)",
+      "React Native / Expo",
+      "BLE",
+      "Wi-Fi Direct"
+    ],
+    "Security": [
+      "JWT",
+      "AES-256-GCM",
+      "ECDH + HKDF",
+      "TLS pinning",
+      "TOTP",
+      "HMAC audit chains",
+      "SSRF guards"
+    ],
+    "Testing": [
+      "pytest",
+      "Vitest",
+      "Playwright",
+      "JUnit",
+      "Maestro",
+      "k6"
+    ],
+    "Systems & Compilers": [
+      "GCC internals (GIMPLE, RTL)",
+      "Binutils",
+      "RISC-V ISA extension",
+      "H.264 / NVENC",
+      "PTY"
+    ],
+    "Statistics & Research": [
+      "SEM",
+      "CFA",
+      "MICOM",
+      "Monte Carlo simulation",
+      "backtesting",
+      "lavaan",
+      "NumPy",
+      "SciPy",
+      "pandas"
+    ],
+    "Core CS": [
+      "Data Structures & Algorithms",
+      "OOP",
+      "Operating Systems",
+      "DBMS",
+      "Computer Networks"
+    ]
+  },
+  "experience": [
+    {
+      "organisation": "Cloord Solutions Pvt. Ltd.",
+      "role": "App Development Intern – School Management Platform",
+      "period": "Jul 2026 – Sept 2026",
+      "stack": [
+        "TypeScript",
+        "React Native/Expo",
+        "Next.js",
+        "AWS (Cognito, DynamoDB, AppSync, Lambda, S3)"
+      ],
+      "highlights": [
+        "Built a multi-tenant school platform (Next.js API on Amplify, web portal, 4 Expo apps) for 1,000+ parents.",
+        "Hardened 300+ API routes on DynamoDB with org isolation, conditional writes, transactions, and rate limits.",
+        "Rebuilt fee payments with once-only settlement, an EventBridge sweeper, refunds, and receipt cancel windows.",
+        "Secured 5 roles on Cognito and S3 presigned access; replaced public Lambda URLs with authenticated routes.",
+        "Built live bus tracking on AppSync with driver bus claim, offline retry, TTL expiry; built a GPS staff app from scratch."
+      ],
+      "links": [
+        {
+          "label": "Verify",
+          "url": "https://drive.google.com/file/d/1Fi3ucbdtgykOgTswaX_vapLCxWNQwM_N/view?usp=sharing"
+        }
+      ]
+    },
+    {
+      "organisation": "Department of Physics, NIT Raipur",
+      "role": "Research Intern – Real-time Sea-to-Air Speech Transmission",
+      "period": "May 2025 – Jul 2025",
+      "stack": [
+        "Python",
+        "NumPy",
+        "SciPy",
+        "Socket Programming",
+        "Digital Signal Processing"
+      ],
+      "highlights": [
+        "Replicated and extended MIT Media Lab's TARF acoustic-RF system (SIGCOMM 2018).",
+        "Built a socket-based pipeline with <200 ms latency and improved signal quality by 8–12 dB."
+      ],
+      "supervisor": "Prof. Y. Janapati",
+      "links": [
+        {
+          "label": "TARF, SIGCOMM 2018",
+          "url": "https://dl.acm.org/doi/10.1145/3230543.3230547"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "NEXUS",
+      "tagline": "Multi-Agent LLM Orchestration Platform",
+      "period": "Jul 2026 – Present",
+      "stack": [
+        "gVisor / Kata microVM sandboxes",
+        "pgvector + BM25",
+        "MCP",
+        "TypeScript",
+        "Fastify",
+        "React",
+        "PostgreSQL",
+        "Redis",
+        "BullMQ",
+        "Docker"
+      ],
+      "highlights": [
+        "Serves 17 LLM providers behind one streaming, OpenAI-compatible API with health-aware failover.",
+        "Runs council deliberation: parallel model dispatch, blind review and debate rounds merged into one verdict.",
+        "Coordinates agent teams with task boards, approvals, budget hard stops and a breaker for loops and cost spikes.",
+        "Isolates agent code in gVisor or Kata microVMs and recalls memory through pgvector + BM25 hybrid search."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/Nexus"
+        }
+      ]
+    },
+    {
+      "name": "WorldFin",
+      "tagline": "Geopolitical Market Advisory",
+      "period": "Feb 2026 – Mar 2026",
+      "stack": [
+        "Laya RL agent (ModernBERT-large)",
+        "LoRA / PEFT",
+        "GDELT",
+        "Python",
+        "FastAPI",
+        "PostgreSQL",
+        "Cloudflare Workers",
+        "GitHub Actions"
+      ],
+      "highlights": [
+        "Maps world news from 32 RSS feeds and GDELT to sectors and tickers with invest or pull-out calls.",
+        "Fine-tunes Laya with LoRA, lifting held-out sector accuracy from 75% to 86% and direction from 68% to 83%.",
+        "Scores every call against SPY; the 4-day hit rate holds at 59% over 846 calls (Wilson 56–62%).",
+        "Backtests on 25.9M GDELT events across 503 S&P 500 tickers; runs at $0/month on free tiers."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/fin-scrape"
+        },
+        {
+          "label": "Live",
+          "url": "https://winfin.pages.dev/app/"
+        }
+      ]
+    },
+    {
+      "name": "PocketDesk",
+      "tagline": "Self-Hosted Phone Control for PC and AI Agents",
+      "period": "Aug 2026 – Sept 2026",
+      "stack": [
+        "iroh (QUIC, hole punching, relay)",
+        "NVENC H.264",
+        "WebCodecs",
+        "Node.js",
+        "node-pty",
+        "Kotlin",
+        "Android",
+        "SSH"
+      ],
+      "highlights": [
+        "Drives Claude Code, Codex and 8 more CLI agents on a PC from an Android app through a Node daemon.",
+        "Reaches the PC from any network over QUIC with hole punching and an encrypted relay, with no VPN or port forward.",
+        "Streams the desktop at up to 60 fps, one QUIC stream per GOP, cutting lag on a capped link from 5–7 s to <1 s.",
+        "Sends agent permission prompts to the phone as diff cards; pairs devices with pinned TLS and TOTP."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/PocketDesk"
+        }
+      ]
+    },
+    {
+      "name": "AdapFit",
+      "tagline": "Adaptive Fitness and Recovery Engine",
+      "period": "Aug 2026",
+      "stack": [
+        "Rust core (PyO3)",
+        "Health Connect",
+        "Python",
+        "FastAPI",
+        "PostgreSQL",
+        "React Native / Expo",
+        "TypeScript",
+        "Docker"
+      ],
+      "highlights": [
+        "Turns daily check-ins into train, reduce, recover or rest advice through a FastAPI and React Native app.",
+        "Scores recovery against each user's own baseline from HRV, sleep, training load, nutrition and self-report.",
+        "Limits the LLM to rewording decisions, behind a safety policy that screens English, Hindi and Hinglish.",
+        "Implements per-purpose consent, session revocation, encryption at rest and erasure for India's DPDP Act."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/adapfit"
+        }
+      ]
+    },
+    {
+      "name": "Case Files",
+      "tagline": "Per-Player Personalised CTF Platform",
+      "period": "Jun 2025 – Aug 2025",
+      "stack": [
+        "Cloudflare Workers",
+        "D1",
+        "Astro",
+        "React",
+        "TypeScript",
+        "Drizzle ORM",
+        "Playwright",
+        "Vitest"
+      ],
+      "highlights": [
+        "Runs a 30-challenge investigation CTF on Cloudflare Workers and D1 with unique evidence per player.",
+        "Derives each player's names, files, audio and images from HMAC seeds, so a copied answer traces to its source.",
+        "Scores with time decay and hint penalties, rate-limits submissions and streams admin updates over SSE.",
+        "Proves every challenge solvable end to end with Playwright playthroughs and automated puzzle solvers."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/CTF"
+        }
+      ]
+    },
+    {
+      "name": "Ping",
+      "tagline": "Offline Gesture-Matched Contact Exchange",
+      "period": "May 2026 – Jun 2026",
+      "stack": [
+        "MediaPipe Hands",
+        "Nearby Connections (BLE, Wi-Fi Direct)",
+        "Kotlin",
+        "Jetpack Compose",
+        "Room"
+      ],
+      "highlights": [
+        "Swaps contact cards offline when two people hold the same hand gesture, with no server or account.",
+        "Encodes MediaPipe's 21 hand landmarks into a matching code covering about 40 poses and motions.",
+        "Connects phones over BLE and Wi-Fi Direct and seals cards with P-256 ECDH, HKDF and AES-256-GCM.",
+        "Releases a card only after both users confirm a six-digit code, since a gesture alone is guessable."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/Ping"
+        }
+      ]
+    },
+    {
+      "name": "RISC-V Compiler Extension",
+      "tagline": "Custom attn Instruction",
+      "period": "Mar 2026 – May 2026",
+      "stack": [
+        "RISC-V ISA extension",
+        "GCC 15.2 internals (GIMPLE, RTL)",
+        "Binutils 2.46",
+        "C",
+        "C++",
+        "Bash"
+      ],
+      "highlights": [
+        "Adds an R4-type RISC-V attn instruction for scaled dot-product attention in the custom-0 opcode space.",
+        "Extends Binutils to encode it and GCC with an RTL pattern, -mattn flag and builtin, with no inline assembly.",
+        "Adds an experimental 500-line GIMPLE pass that reduces four attention loop nests in plain C to one attn.",
+        "Scripts injection of any new custom instruction into GCC, Binutils, LLVM, Spike and QEMU from one spec."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/RISC-V_Injection"
+        }
+      ]
+    },
+    {
+      "name": "Key Router",
+      "tagline": "Expiring Gateway Keys for LLM Providers",
+      "period": "Oct 2026",
+      "stack": [
+        "Cloudflare Workers",
+        "Workers KV",
+        "Web Crypto",
+        "JavaScript",
+        "node:test"
+      ],
+      "highlights": [
+        "Wraps any OpenAI-compatible provider key in a disposable, expiring gateway key; clients never see the real one.",
+        "Proxies requests at the edge on Cloudflare Workers, streaming included, with routes expiring through KV TTL.",
+        "Serves Claude Code through Anthropic-compatible endpoints and prints a ready settings file for each key.",
+        "Guards the admin page with a constant-time password check and deploys on the free plan in one command."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/Key-Router"
+        }
+      ]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Oracle Agentic AI Foundations Associate",
+      "issuer": "Oracle",
+      "date": "Aug 2026",
+      "verify": "https://brm-certview.oracle.com/ords/certview/ScoreReport?ssn=OC8096940&registrationID=asx-d04c983d-78db-4c34-b80d-0201d4bd4ba4"
+    },
+    {
+      "name": "Redis Certified: Associate Software Operator",
+      "issuer": "Redis",
+      "date": "Jul 2026",
+      "verify": "https://university.redis.io/certificate/tareelgvzdb6ug"
+    },
+    {
+      "name": "Hedera Certified Foundation (HCF)",
+      "issuer": "The Hashgraph Association",
+      "date": "Aug 2026"
+    },
+    {
+      "name": "Cybersecurity Job Simulation",
+      "issuer": "Mastercard via Forage",
+      "date": "Sept 2026",
+      "verify": "https://forage-uploads-prod.s3.amazonaws.com/completion-certificates/mfxGwGDp6WkQmtmTf/vcKAB5yYAgvemepGQ_mfxGwGDp6WkQmtmTf_6a9e4f7b6eea872820b3b0d0_1788769923004_completion_certificate.pdf"
+    }
+  ],
+  "courses": {
+    "provider": "Anthropic Academy",
+    "date": "Jul 2026",
+    "items": [
+      {
+        "name": "Building with the Claude API",
+        "verify": "https://verify.skilljar.com/c/o4x6n69rietm"
+      },
+      {
+        "name": "Claude Code in Action",
+        "verify": "https://verify.skilljar.com/c/chhj3umb82i6"
+      },
+      {
+        "name": "MCP: Advanced Topics",
+        "verify": "https://verify.skilljar.com/c/fkc7c9mh3exj"
+      },
+      {
+        "name": "Intro to MCP",
+        "verify": "https://verify.skilljar.com/c/dsut5nipc2ps"
+      },
+      {
+        "name": "Subagents",
+        "verify": "https://verify.skilljar.com/c/vv7k2d7co667"
+      },
+      {
+        "name": "Agent Skills",
+        "verify": "https://verify.skilljar.com/c/bjhipduwc57f"
+      },
+      {
+        "name": "Claude with Amazon Bedrock",
+        "verify": "https://verify.skilljar.com/c/mwxyfw3skoax"
+      },
+      {
+        "name": "Claude on Google Cloud",
+        "verify": "https://verify.skilljar.com/c/k4iyzcgxzuq7"
+      },
+      {
+        "name": "Claude Platform 101",
+        "verify": "https://verify.skilljar.com/c/4cfngdzkzay7"
+      },
+      {
+        "name": "Claude Code 101",
+        "verify": "https://verify.skilljar.com/c/odz56vrgrkou"
+      },
+      {
+        "name": "AI Fluency: Framework & Foundations",
+        "verify": "https://verify.skilljar.com/c/dd2eqr6sv8jk"
+      },
+      {
+        "name": "AI Fluency for Builders",
+        "verify": "https://verify.skilljar.com/c/8ogcx8vji5b2"
+      },
+      {
+        "name": "AI Capabilities and Limitations",
+        "verify": "https://verify.skilljar.com/c/xv5vir5ch4gm"
+      },
+      {
+        "name": "Teaching AI Fluency",
+        "verify": "https://verify.skilljar.com/c/ijp5s9dnfzzk"
+      },
+      {
+        "name": "AI Fluency for Students",
+        "verify": "https://verify.skilljar.com/c/rkhoeugbxy8t"
+      },
+      {
+        "name": "AI Fluency for Educators",
+        "verify": "https://verify.skilljar.com/c/bkkue8ez8939"
+      },
+      {
+        "name": "AI Fluency for Nonprofits",
+        "verify": "https://verify.skilljar.com/c/txb3kwfdktqw"
+      },
+      {
+        "name": "AI Fluency for Small Businesses",
+        "verify": "https://verify.skilljar.com/c/kqfnic34uuco"
+      },
+      {
+        "name": "Claude 101",
+        "verify": "https://verify.skilljar.com/c/9kn55sgpe52n"
+      },
+      {
+        "name": "Claude Cowork",
+        "verify": "https://verify.skilljar.com/c/b2qrufdk8pkh"
+      }
+    ]
+  },
+  "achievements": [
+    "Global Rank 113, CodeChef Starters 213 Div 3 (max rating 1626)",
+    "Global Rank 310, LeetCode Biweekly Contest 186 (max rating 1872)"
+  ],
+  "positions_of_responsibility": [
+    {
+      "role": "Class Representative, CSE Branch, NIT Raipur",
+      "period": "Aug 2024 – Present",
+      "summary": "Represented 120+ students; resolved academic and administrative issues by coordinating with the department."
+    },
+    {
+      "role": "Convenor, Association of Computer Engineers, NIT Raipur",
+      "period": "Oct 2024 – Present",
+      "summary": "Led the planning and execution of 2 cultural events and 2 hackathons with 50+ participants each."
+    }
+  ]
+}

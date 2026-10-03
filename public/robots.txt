@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# Machine-readable CV: /cv.json  (summary for LLMs: /llms.txt)
