@@ -946,69 +946,140 @@ function trace(i, d) {
   return [-d, o];
 }
 
-// RISC-V attn: signals run in along the pins, the die lifts and turns as the instruction executes,
-// then seats back into the package.
+// RISC-V attn: four nested attention loops in plain C hang above the chip. The compiler pass
+// collapses them into one attn instruction with its four operands, the instruction drops into the
+// die, and the die seats and runs it out along the traces.
+const NESTS = 4;
+const NEST_AT = [0, 0.95, 0.4];
+const BAR = [0.62, 0.07];
+const CHIP_PINS = (() => {
+  const out = [];
+  for (let i = 0; i < 8; i++) {
+    const o = -0.84 + i * 0.24;
+    out.push([o, 1.12, 0], [o, -1.12, 0], [1.12, o, 0], [-1.12, o, 0]);
+  }
+  return out;
+})();
+
+const chipInit = () => ({ nests: Array.from({ length: NESTS }, () => ({ in: 0 })), fold: 0, drop: 0, lift: 0, seat: 0, run: 0 });
+
+function chipStory({ intro, loop }, s) {
+  intro.add(s.nests, { in: [0, 1], duration: 800, ease: OUT, delay: stagger(110) });
+  loop
+    .add(s, { fold: [0, 1], duration: 1300 }, 600)
+    .add(s, { lift: [0, 1], duration: 450, ease: OUT }, 1800)
+    .add(s, { drop: [0, 1], duration: 850 }, 2000)
+    .add(s, { seat: [0, 1], lift: 0, duration: 700 }, 2850)
+    .add(s, { run: [0, 1], duration: 1300, ease: 'linear' }, 3500)
+    .add(s, { fold: 0, duration: 1000 }, 5000)
+    .add(s, { drop: 0, seat: 0, run: 0, duration: 1 }, 5000);
+}
+
 function Chip({ still, color, delay }) {
-  const clock = useClock(delay);
+  const s = useStory(chipInit, chipStory, { delay, still, at: 0.15 });
+  const nests = useRef([]);
+  const bar = useRef();
   const die = useRef();
   const signals = useRef();
-  const pins = useMemo(() => {
-    const out = [];
-    for (let i = 0; i < 8; i++) {
-      const o = -0.84 + i * 0.24;
-      out.push([o, 1.12, 0], [o, -1.12, 0], [1.12, o, 0], [-1.12, o, 0]);
+  useFrame(() => {
+    // Each nest is four edges; folding pulls every nest down to the instruction's own size.
+    nests.current.forEach((edges, i) => {
+      if (!edges) return;
+      const w = lerp(0.95 - i * 0.17, BAR[0] / 2, s.fold);
+      const h = lerp(0.55 - i * 0.11, BAR[1] / 2, s.fold);
+      const [top, bottom, left, right] = edges.children;
+      top.position.y = h;
+      bottom.position.y = -h;
+      left.position.x = -w;
+      right.position.x = w;
+      top.scale.x = bottom.scale.x = w * 2;
+      left.scale.y = right.scale.y = h * 2;
+      edges.position.y = NEST_AT[1] + lerp(0.8, 0, s.nests[i].in);
+      edges.visible = s.fold < 0.99;
+      edges.children.slice(4).forEach((line) => (line.visible = s.fold < 0.2));
+    });
+    if (bar.current) {
+      bar.current.position.set(NEST_AT[0], lerp(NEST_AT[1], -0.15, s.drop), lerp(NEST_AT[2], 0.25, s.drop));
+      bar.current.visible = s.fold > 0.98 && s.drop < 0.99;
     }
-    return out;
-  }, []);
-  useFrame((state) => {
-    const t = still ? 0 : clock(state);
-    const p = (t % 6) / 6;
-    const lift = easeInOut(span(p, 0.3, 0.45)) * (1 - easeOut(span(p, 0.7, 0.85)));
     if (die.current) {
-      die.current.position.z = 0.13 + lift * 0.5;
-      die.current.rotation.z = easeInOut(span(p, 0.4, 0.65)) * (Math.PI / 2);
+      die.current.position.z = 0.13 + s.lift * 0.45;
+      die.current.rotation.z = s.seat * (Math.PI / 2);
     }
-    signals.current?.children.forEach((s, i) => {
-      const k = easeInOut(span(p, 0.02 + (i >> 2) * 0.05 + (i % 4) * 0.012, 0.22 + (i >> 2) * 0.05 + (i % 4) * 0.012));
-      const [x, y] = trace(i, lerp(1.1, 0.58, k));
-      s.position.set(x, y, 0.105);
-      s.visible = !still && k > 0 && k < 1;
+    signals.current?.children.forEach((m, i) => {
+      const k = easeInOut(span(s.run, (i >> 2) * 0.12 + (i % 4) * 0.03, 0.5 + (i >> 2) * 0.12 + (i % 4) * 0.03));
+      const [x, y] = trace(i, lerp(0.58, 1.1, k));
+      m.position.set(x, y, 0.105);
+      m.visible = !still && k > 0 && k < 1;
     });
   });
   return (
-    <group rotation={[-0.9, 0, 0.5]}>
-      <RoundedBox args={[2.1, 2.1, 0.18]} radius={0.04} smoothness={4}>
-        <meshPhysicalMaterial color="#1b2127" roughness={0.45} clearcoat={0.6} />
-      </RoundedBox>
-      <group ref={die} position={[0, 0, 0.13]}>
-        <RoundedBox args={[1.1, 1.1, 0.1]} radius={0.03} smoothness={4}>
+    <group position={[0, -0.1, 0]} scale={0.92}>
+      {Array.from({ length: NESTS }, (_, i) => (
+        <group key={i} ref={(g) => (nests.current[i] = g)} position={[NEST_AT[0], NEST_AT[1], NEST_AT[2] + i * 0.04]}>
+          {[0, 1].map((e) => (
+            <mesh key={e}>
+              <boxGeometry args={[1, 0.022, 0.02]} />
+              <meshBasicMaterial color={i === NESTS - 1 ? color : '#5c6b78'} toneMapped={false} />
+            </mesh>
+          ))}
+          {[0, 1].map((e) => (
+            <mesh key={e + 2}>
+              <boxGeometry args={[0.022, 1, 0.02]} />
+              <meshBasicMaterial color={i === NESTS - 1 ? color : '#5c6b78'} toneMapped={false} />
+            </mesh>
+          ))}
+          <mesh position={[-0.68 + i * 0.17, 0.44 - i * 0.11, 0]}>
+            <planeGeometry args={[0.22, 0.03]} />
+            <meshBasicMaterial color="#8fb3c9" toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+      <group ref={bar}>
+        <RoundedBox args={[BAR[0], BAR[1] * 2.2, 0.08]} radius={0.03} smoothness={3}>
           <Accent color={color} />
         </RoundedBox>
+        {[0, 1, 2, 3].map((o) => (
+          <mesh key={o} position={[-0.21 + o * 0.14, 0, 0.045]}>
+            <circleGeometry args={[0.028, 16]} />
+            <meshBasicMaterial color="#eef3f3" toneMapped={false} />
+          </mesh>
+        ))}
       </group>
-      <Instances limit={pins.length}>
-        <boxGeometry args={[0.1, 0.1, 0.06]} />
-        <Chrome />
-        {pins.map((p, i) => (
-          <Instance key={i} position={p} scale={[i % 4 < 2 ? 1 : 1.6, i % 4 < 2 ? 1.6 : 1, 1]} />
-        ))}
-      </Instances>
-      {Array.from({ length: 16 }, (_, i) => {
-        const [x, y] = trace(i, 0.84);
-        const along = i % 4 < 2;
-        return (
-          <mesh key={i} position={[x, y, 0.092]}>
-            <boxGeometry args={along ? [0.03, 0.54, 0.004] : [0.54, 0.03, 0.004]} />
-            <meshBasicMaterial color="#5c6b78" />
-          </mesh>
-        );
-      })}
-      <group ref={signals}>
-        {Array.from({ length: 16 }, (_, i) => (
-          <mesh key={i}>
-            <boxGeometry args={[0.07, 0.07, 0.03]} />
-            <meshBasicMaterial color={color} toneMapped={false} />
-          </mesh>
-        ))}
+      <group rotation={[-1.05, 0, 0.5]} position={[0, -0.55, 0]} scale={0.75}>
+        <RoundedBox args={[2.1, 2.1, 0.18]} radius={0.04} smoothness={4}>
+          <meshPhysicalMaterial color="#1b2127" roughness={0.45} clearcoat={0.6} />
+        </RoundedBox>
+        <group ref={die} position={[0, 0, 0.13]}>
+          <RoundedBox args={[1.1, 1.1, 0.1]} radius={0.03} smoothness={4}>
+            <Accent color={color} />
+          </RoundedBox>
+        </group>
+        <Instances limit={CHIP_PINS.length}>
+          <boxGeometry args={[0.1, 0.1, 0.06]} />
+          <Chrome />
+          {CHIP_PINS.map((p, i) => (
+            <Instance key={i} position={p} scale={[i % 4 < 2 ? 1 : 1.6, i % 4 < 2 ? 1.6 : 1, 1]} />
+          ))}
+        </Instances>
+        {Array.from({ length: 16 }, (_, i) => {
+          const [x, y] = trace(i, 0.84);
+          const along = i % 4 < 2;
+          return (
+            <mesh key={i} position={[x, y, 0.092]}>
+              <boxGeometry args={along ? [0.03, 0.54, 0.004] : [0.54, 0.03, 0.004]} />
+              <meshBasicMaterial color="#5c6b78" />
+            </mesh>
+          );
+        })}
+        <group ref={signals}>
+          {Array.from({ length: 16 }, (_, i) => (
+            <mesh key={i}>
+              <boxGeometry args={[0.07, 0.07, 0.03]} />
+              <meshBasicMaterial color={color} toneMapped={false} />
+            </mesh>
+          ))}
+        </group>
       </group>
     </group>
   );
