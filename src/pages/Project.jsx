@@ -48,7 +48,6 @@ export default function Project() {
               <Artifact shape={p.shape} color={p.color} delay={reduce ? 0.2 : 0.9} tilt={0.15} />
             </PresentationControls>
           </Scene>
-          <p className="pointer-events-none absolute bottom-2 right-0 font-mono text-[12px] text-muted">Drag to turn</p>
         </div>
       </section>
 
