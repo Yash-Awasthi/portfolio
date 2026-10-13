@@ -24,15 +24,15 @@ export function Nav() {
   return (
     <header className="fixed inset-x-0 top-0 z-30 backdrop-blur-md">
       <motion.div aria-hidden className="absolute inset-0 -z-10 opacity-80" style={{ backgroundColor: tint }} />
-      <nav aria-label="Primary" className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-4 md:px-8">
+      <nav aria-label="Primary" className="mx-auto flex h-16 max-w-[87.5rem] items-center justify-between px-4 md:px-8">
         <Link
           to="/"
           onClick={(e) => pathname === '/' && (e.preventDefault(), scrollTo('top'))}
-          className="text-[15px] font-medium tracking-tight"
+          className="text-[0.9375rem] font-medium tracking-tight"
         >
           Yash Awasthi
         </Link>
-        <div className="flex items-center gap-4 text-[14px] md:gap-8">
+        <div className="flex items-center gap-4 text-[0.875rem] md:gap-8">
           {ANCHORS.map((a) => (
             <a key={a.id} href={`/#${a.id}`} onClick={(e) => go(e, a.id)} className="link-underline hidden sm:inline">
               {a.label}

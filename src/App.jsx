@@ -55,7 +55,7 @@ function Progress() {
   return (
     <motion.div
       aria-hidden
-      className="fixed inset-x-0 top-0 z-40 h-[3px] origin-left"
+      className="fixed inset-x-0 top-0 z-40 h-[0.1875rem] origin-left"
       style={{ scaleX, backgroundImage: BAR }}
     />
   );

@@ -3,14 +3,28 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { View, PerspectiveCamera } from '@react-three/drei';
 
+// A buffer past the GPU's limits is silently shrunk and every View lands off its box (zooming far
+// out does this), so the pixel ratio drops to keep it under 4096² pixels and 8192 a side.
+const pixelRatio = () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return Math.min(Math.max(window.devicePixelRatio, 2), 2.5, 4096 / Math.sqrt(w * h), 8192 / Math.max(w, h));
+};
+
 // One WebGL context for the whole site; every 3D spot is a View drawn into it.
 export function Stage() {
+  const [dpr, setDpr] = useState(pixelRatio);
+  useEffect(() => {
+    const on = () => setDpr(pixelRatio());
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
   return (
     <Canvas
       className="!fixed inset-0 !pointer-events-none"
       style={{ position: 'fixed', zIndex: 2 }}
       eventSource={document.getElementById('root')}
-      dpr={[2, 2.5]}
+      dpr={dpr}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => {
         // the error check reads link status, which waits on the compile and blocked the page for ~1s
@@ -79,6 +93,7 @@ function Fit({ radius, target }) {
   const need = useRef(0);
   const tick = useRef(0);
   const seen = useRef(false);
+  const aspect = useRef(0);
   useLayoutEffect(() => {
     const v = THREE.MathUtils.degToRad(camera.fov) / 2;
     const h = Math.atan(Math.tan(v) * (size.width / size.height));
@@ -94,10 +109,13 @@ function Fit({ radius, target }) {
     g.updateWorldMatrix(true, true);
     BOX.setFromObject(g);
     if (BOX.isEmpty()) return;
+    // `size` is the box at mount; View resets the camera's aspect to the live box every frame
+    if (camera.aspect !== aspect.current) seen.current = false;
+    aspect.current = camera.aspect;
     const v = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     const x = Math.max(Math.abs(BOX.min.x), Math.abs(BOX.max.x));
     const y = Math.max(Math.abs(BOX.min.y), Math.abs(BOX.max.y));
-    const want = (Math.max(y / v, x / (v * (size.width / size.height))) + BOX.max.z) * 1.04;
+    const want = (Math.max(y / v, x / (v * camera.aspect)) + BOX.max.z) * 1.04;
     if (!seen.current || want > need.current) need.current = want;
     seen.current = true;
     camera.position.set(0, 0, camera.position.z + (need.current - camera.position.z) * 0.15);

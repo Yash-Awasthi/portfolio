@@ -1,6 +1,6 @@
 import { Suspense, useMemo, useRef, useState } from 'react';
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
-import { Float, RoundedBox, Instances, Instance, useGLTF } from '@react-three/drei';
+import { Float, RoundedBox, RoundedBoxGeometry, Instances, Instance, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { useReducedMotion } from 'motion/react';
 import { stagger } from 'animejs';
@@ -1109,7 +1109,222 @@ function KeyGate({ still, color, delay }) {
   );
 }
 
-const SHAPES = { council: Council, globe: Globe, rings: Recovery, phone: Desk, files: Files, pair: Pair, chip: Chip, key: KeyGate };
+// Microbook: messages run through the ring onto an order-by-order book; a buyer eats the best ask's queue,
+// paper order included, and the session rewinds and replays faster to the same hash.
+const LV = 5;
+const levelX = (l) => (l < LV ? -1 : 1) * (0.32 + (l % LV) * 0.27);
+// Orders per level, best first: bids 0-4, asks 5-9. The paper order is the last in the best ask.
+const DEPTH = [3, 4, 5, 4, 6, 3, 4, 4, 5, 6];
+const BEST_ASK = LV;
+const PAPER = 2;
+const SLOTS = 8;
+const PITCH = 0.1;
+const TOP = -0.5;
+const SUNK = TOP - 0.08;
+const DROP = 0.35;
+const RAIL = new THREE.Vector3(-1.75, TOP - 0.42, 0.55);
+const RING = new THREE.Vector3(0, RAIL.y, RAIL.z);
+const RAIL_K = 0.45;
+const HASH = [1, 0, 1, 1, 0, 1, 1, 0];
+const CELL_OFF = new THREE.Color('#3b4651');
+// [ms, level, end]: an add joins the back of a queue, a cancel leaves its front. The pace quickens
+// and the last few build up the bids.
+const FEED = [
+  [300, 7, 'back'],
+  [600, 1, 'back'],
+  [850, 5, 'back'],
+  [1100, 3, 'front'],
+  [1300, 0, 'back'],
+  [1500, 8, 'front'],
+  [1650, 5, 'back'],
+  [1800, 2, 'back'],
+  [2000, 0, 'back'],
+  [2150, 1, 'back'],
+  [2300, 0, 'back'],
+  [2450, 6, 'front'],
+];
+const CONSUME = 4200;
+const LIVE = 6000;
+const REPLAY = 7300;
+const FAST = 0.4;
+const REWIND = [6300, 10700];
+const BOOK_LOOP = REWIND[1] + 800;
+
+// The session played once here: each message's path (it lands just above its level) and the value
+// it moves, so the story tweens between exact numbers. The last message is the buyer.
+const BOOK_RUN = (() => {
+  const lv = DEPTH.map((back) => ({ front: 0, back }));
+  const arc = (x, y, z) => new THREE.QuadraticBezierCurve3(RING, new THREE.Vector3(x / 2, y + 0.45, 0.4), new THREE.Vector3(x, y, z));
+  const msgs = FEED.map(([, l, end]) => {
+    const { front, back } = lv[l];
+    return { from: lv[l][end]++, path: arc(levelX(l), TOP + (back - front + 0.4) * PITCH + (end === 'back' ? DROP : 0), 0) };
+  });
+  msgs.push({ path: arc(levelX(BEST_ASK), TOP + PITCH / 2, 0.24) });
+  lv[BEST_ASK].front += PAPER + 1;
+  return { msgs, end: lv };
+})();
+
+const bookInit = () => ({
+  levels: DEPTH.map((back) => ({ front: 0, back, rise: 0 })),
+  msgs: BOOK_RUN.msgs.map(() => ({ k: 0 })),
+  rows: [0, 1].map(() => HASH.map(() => ({ on: 0 }))),
+  lean: 0,
+  play: 0,
+  slide: 0,
+});
+
+// One session from `t` at `k` times the live length; the replay is the same pass, faster.
+function bookPass(loop, s, t, k, row) {
+  const at = (ms) => t + ms * k;
+  FEED.forEach(([ms, l, end], i) => {
+    const { from } = BOOK_RUN.msgs[i];
+    loop
+      .add(s.msgs[i], { k: [0, 1], duration: 900 * k }, at(ms))
+      .add(s.levels[l], { [end]: [from, from + 1], duration: 260 * k }, at(ms + 850));
+  });
+  loop
+    .add(s, { lean: [0, 1], duration: 1200 * k }, at(2000))
+    .add(s.msgs[FEED.length], { k: [0, 1], duration: 900 * k }, at(CONSUME - 900));
+  for (let q = 0; q <= PAPER; q++) {
+    loop.add(s.levels[BEST_ASK], { front: [q, q + 1], duration: 250 * k, ease: OUT }, at(CONSUME + q * 350));
+  }
+  loop
+    .add(s.rows[row], { on: [0, 1], duration: 220 * k, delay: stagger(60 * k) }, at(5300))
+    .add(s, { play: [0, 1], duration: LIVE * k, ease: 'linear' }, t);
+}
+
+function bookRewind(loop, s, t) {
+  loop.add(s.msgs, { k: 0, duration: 1 }, t);
+  BOOK_RUN.end.forEach(({ front, back }, l) => loop.add(s.levels[l], { front: [front, 0], back: [back, DEPTH[l]], duration: 800 }, t));
+  loop.add(s, { lean: [1, 0], play: [1, 0], duration: 800 }, t);
+}
+
+function bookStory({ intro, loop }, s) {
+  s.levels.forEach((L, l) => intro.add(L, { rise: [0, 1], duration: 800, ease: OUT }, (l % LV) * 90));
+  intro.add(s, { slide: [0, 1], duration: 900, ease: OUT }, 150);
+  bookPass(loop, s, 0, 1, 0);
+  bookRewind(loop, s, REWIND[0]);
+  bookPass(loop, s, REPLAY, FAST, 1);
+  bookRewind(loop, s, REWIND[1]);
+  loop.add([...s.rows[0], ...s.rows[1]], { on: 0, duration: 600 }, REWIND[1]);
+}
+
+function Book({ still, color, delay }) {
+  // Held with one order still ahead of the paper order in its queue.
+  const s = useStory(bookInit, bookStory, { delay, still, at: 4500 / BOOK_LOOP });
+  const slabs = useRef([]);
+  const paper = useRef();
+  const micro = useRef();
+  const head = useRef();
+  const ring = useRef();
+  const msgs = useRef([]);
+  const cells = useRef([]);
+  const feed = useRef();
+  const tablet = useRef();
+  const lit = useMemo(() => new THREE.Color(color), [color]);
+  useFrame(() => {
+    s.levels.forEach((L, l) => {
+      // Orders sink into the engine as they leave the front; a new one drops onto the back.
+      const front = L.front + (1 - L.rise) * L.back;
+      for (let j = 0; j < SLOTS; j++) {
+        const m = l === BEST_ASK && j === PAPER ? paper.current : slabs.current[l * SLOTS + j];
+        if (!m) continue;
+        const shown = j < L.back && j - front > -1;
+        m.position.y = shown ? TOP + (j - front + 0.5) * PITCH + Math.max(0, j + 1 - L.back) * DROP : SUNK;
+      }
+    });
+    if (micro.current) micro.current.position.x = s.lean * 0.16;
+    if (head.current) head.current.position.x = lerp(-1.45, 1.45, s.play);
+    let turn = 0;
+    msgs.current.forEach((m, i) => {
+      if (!m) return;
+      const k = s.msgs[i].k;
+      if (k < RAIL_K) m.position.lerpVectors(RAIL, RING, k / RAIL_K);
+      else BOOK_RUN.msgs[i].path.getPoint((k - RAIL_K) / (1 - RAIL_K), m.position);
+      m.visible = k > 0.01 && k < 0.99;
+      turn += easeInOut(span(k, RAIL_K - 0.05, RAIL_K + 0.05));
+    });
+    // One slot per message; the slots are alike, so the reset by whole slots never shows.
+    if (ring.current) ring.current.rotation.z = (turn * Math.PI) / 4;
+    cells.current.forEach((m, i) => m?.color.copy(CELL_OFF).lerp(lit, HASH[i % 8] * s.rows[i >> 3][i % 8].on));
+    if (feed.current) feed.current.position.x = lerp(-0.35, 0, s.slide);
+    if (tablet.current) tablet.current.position.x = lerp(0.35, 0, s.slide);
+  });
+  return (
+    <group rotation={[0.42, -0.3, 0]} position={[0.1, 0.45, 0]}>
+      <RoundedBox args={[3.2, 0.16, 0.66]} radius={0.03} smoothness={4} position={[0, SUNK, 0]}>
+        <meshPhysicalMaterial color="#1b2127" roughness={0.45} clearcoat={0.6} />
+      </RoundedBox>
+      <Instances limit={DEPTH.length * SLOTS}>
+        <RoundedBoxGeometry args={[0.2, 0.08, 0.34]} radius={0.015} smoothness={2} />
+        <Clay />
+        {Array.from({ length: DEPTH.length * SLOTS }, (_, i) => (
+          <Instance key={i} ref={(m) => (slabs.current[i] = m)} position={[levelX(Math.floor(i / SLOTS)), SUNK, 0]} />
+        ))}
+      </Instances>
+      <mesh ref={paper} position={[levelX(BEST_ASK), SUNK, 0]}>
+        <RoundedBoxGeometry args={[0.22, 0.08, 0.36]} radius={0.015} smoothness={2} />
+        <Accent color={color} />
+      </mesh>
+      <mesh position={[0, TOP + 0.36, 0]}>
+        <cylinderGeometry args={[0.01, 0.01, 0.72, 8]} />
+        <Chrome />
+      </mesh>
+      <mesh ref={micro} position={[0, TOP + 0.8, 0]} scale={0.055}>
+        <sphereGeometry args={[1, 24, 24]} />
+        <Accent color={color} />
+      </mesh>
+      <mesh position={[0, TOP + 0.01, 0.35]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.012, 0.012, 2.9, 8]} />
+        <Chrome />
+      </mesh>
+      <mesh ref={head} position={[-1.45, TOP + 0.03, 0.35]}>
+        <boxGeometry args={[0.04, 0.1, 0.04]} />
+        <Accent color={color} />
+      </mesh>
+      <group ref={feed}>
+        <mesh position={[(RAIL.x - 0.15) / 2, RAIL.y, RAIL.z]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.018, 0.018, -0.15 - RAIL.x, 12]} />
+          <Chrome />
+        </mesh>
+        <group position={RING.toArray()} rotation={[0, 1.1, 0]}>
+          <group ref={ring}>
+            <mesh>
+              <torusGeometry args={[0.15, 0.022, 12, 48]} />
+              <Chrome />
+            </mesh>
+            <Instances limit={8}>
+              <sphereGeometry args={[0.04, 16, 16]} />
+              <Clay />
+              {Array.from({ length: 8 }, (_, i) => (
+                <Instance key={i} position={[Math.cos((i * Math.PI) / 4) * 0.15, Math.sin((i * Math.PI) / 4) * 0.15, 0]} />
+              ))}
+            </Instances>
+          </group>
+        </group>
+      </group>
+      <group ref={tablet}>
+        <RoundedBox args={[1, 0.32, 0.05]} radius={0.02} smoothness={3} position={[0.95, RAIL.y, RAIL.z]}>
+          <meshPhysicalMaterial color="#1b2127" roughness={0.45} clearcoat={0.6} />
+        </RoundedBox>
+        {Array.from({ length: HASH.length * 2 }, (_, i) => (
+          <mesh key={i} position={[0.95 + ((i % 8) - 3.5) * 0.11, RAIL.y + (i < 8 ? 0.07 : -0.07), RAIL.z + 0.027]}>
+            <planeGeometry args={[0.075, 0.075]} />
+            <meshBasicMaterial ref={(m) => (cells.current[i] = m)} color={CELL_OFF} toneMapped={false} />
+          </mesh>
+        ))}
+      </group>
+      {BOOK_RUN.msgs.map((_, i) => (
+        <mesh key={i} ref={(m) => (msgs.current[i] = m)} position={RAIL.toArray()} scale={i < FEED.length ? 0.06 : 0.085}>
+          <sphereGeometry args={[1, 16, 16]} />
+          <Chrome />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+const SHAPES = { council: Council, globe: Globe, rings: Recovery, phone: Desk, files: Files, pair: Pair, chip: Chip, key: KeyGate, book: Book };
 
 // Globe-turn swap: the current object and the next sit back to back on one axis and turn together
 // through half a revolution, so the swap is a single continuous motion with no pause between them.

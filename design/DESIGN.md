@@ -35,6 +35,7 @@ Each work row is a stop in its project's tint; the journey has one stop per mile
 | Ping | `#6a78d1` | `#e5e8f6` |
 | RISC-V attn | `#237a94` | `#d9eaee` |
 | Key Router | `#3367a8` | `#dfe6f1` |
+| Microbook | `#2a8a64` | `#dcede4` |
 
 Accents in small text are mixed 72% toward ink (`ink()` in `src/lib/tint.js`) to keep contrast.
 
@@ -51,7 +52,9 @@ Interactive controls are pills. Media, panels and grids are square. Hairlines in
 
 ## Layout
 
-- Container `max-w-[1400px]`, gutters 16px mobile, 32px desktop, 12-column grid from `md`.
+- Container 87.5rem (1400px), gutters 1rem mobile, 2rem desktop, 12-column grid from `md`.
+- Sizes are in rem and the root is `max(100%, 1vw)`, so past 1600px wide (large screens, zoomed out) the
+  page scales as a whole instead of shrinking into a strip. Hairlines stay in px.
 - Every multi-column block collapses to one column below 768px.
 - Home order: hero, statement, selected work, journey, experience, certifications, contact.
 - Project page: title and 3D object, meta and overview, screenshot (only if real), what I built, next project.
@@ -68,6 +71,7 @@ Interactive controls are pills. Media, panels and grids are square. Hairlines in
 | Section wash | Background | Each section carries its own cool pastel |
 | Hero parallax | Hero | Name drifts up and fades, the 3D form sinks and shrinks |
 | Scroll-driven stack band | Below statement | Two rows slide opposite ways with the scroll |
+| Object follows the active row | Selected work | The sticky 3D eases beside the hovered or centred project, kept within the list |
 | Progress line | Top edge | Teal to indigo line tracking page scroll |
 | Screenshot zoom | Project page | Grows from 88% as it reaches centre |
 | Lenis smooth scroll, lerp 0.1 | Global | Even scroll speed for the pinned and scrubbed parts |
@@ -101,6 +105,7 @@ loop at one chosen moment.
 | Ping | Two phones, a hand above each | Both hands close into the same V and lock; the six-digit check lights on both screens; the phones turn and the card crosses |
 | RISC-V attn | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
 | Key Router | Cloud with a TTL dial, chrome key, accent key | The real key slides into the cloud and stays; the gateway key turns out of the other side; requests arc over the cloud and change colour at the swap; replies stream back underneath; the dial drains and the key turns edge-on and retracts |
+| Microbook | Order-by-order book on a dark engine plate, feed rail with a ring, playhead, two-row hash tablet | Messages run through the ring onto the queues as adds and cancels; the bids build and the micro-price leans to the ask; a buyer eats the best ask's queue and the paper order fills; the run's hash lights; the playhead rewinds, the session replays faster and the second hash comes out the same |
 
 On the home page, switching projects is a turntable: the current object turns edge-on and the
 next turns in from the other side, replaying its entrance, all inside the frame.

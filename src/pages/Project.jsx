@@ -21,15 +21,15 @@ export default function Project() {
   return (
     <Page color={p.color}>
       <title>{`${p.name} | Yash Awasthi`}</title>
-      <section data-wash={p.tint} className="mx-auto grid max-w-[1400px] gap-8 px-4 pt-24 md:min-h-[100dvh] md:grid-cols-12 md:px-8">
+      <section data-wash={p.tint} className="mx-auto grid max-w-[87.5rem] gap-8 px-4 pt-24 md:min-h-[100dvh] md:grid-cols-12 md:px-8">
         <div className="flex flex-col md:col-span-6 md:pb-16">
-          <Link to="/#work" className="link-underline inline-flex w-fit items-center gap-2 text-[14px] text-muted">
-            <ArrowLeft size={14} /> All work
+          <Link to="/#work" className="link-underline inline-flex w-fit items-center gap-2 text-[0.875rem] text-muted">
+            <ArrowLeft size="0.875rem" /> All work
           </Link>
           <div className="mt-auto pt-16">
             <Words as="h1" onLoad delay={0.5} text={p.name} className="display text-[clamp(3.6rem,10vw,9rem)]" />
             <Reveal delay={0.8}>
-              <span aria-hidden className="mt-6 block h-[3px] w-16" style={{ backgroundColor: p.color }} />
+              <span aria-hidden className="mt-6 block h-[0.1875rem] w-16" style={{ backgroundColor: p.color }} />
               <p className="mt-6 max-w-[30ch] text-[clamp(1.25rem,2vw,1.6rem)] leading-snug tracking-tight">{p.line}</p>
             </Reveal>
           </div>
@@ -51,9 +51,9 @@ export default function Project() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-4 py-24 md:px-8 md:py-32">
+      <section className="mx-auto max-w-[87.5rem] px-4 py-24 md:px-8 md:py-32">
         <div className="grid gap-12 md:grid-cols-12">
-          <Reveal as="dl" className="grid content-start gap-6 text-[15px] md:col-span-4">
+          <Reveal as="dl" className="grid content-start gap-6 text-[0.9375rem] md:col-span-4">
             <div>
               <dt style={{ color: ink(p.color) }}>Year</dt>
               <dd className="mt-1">{p.year}</dd>
@@ -78,7 +78,7 @@ export default function Project() {
 
       {p.image && <Shot src={p.image} alt={`${p.name} ${p.imageAlt}`} />}
 
-      <section className="mx-auto max-w-[1400px] px-4 py-24 md:px-8 md:py-32">
+      <section className="mx-auto max-w-[87.5rem] px-4 py-24 md:px-8 md:py-32">
         <Words text="What I built" className="display mb-14 text-[clamp(2.4rem,5vw,4.6rem)]" />
         <ul className="grid gap-x-10 gap-y-12 md:grid-cols-2">
           {p.points.map((pt, k) => (
@@ -86,7 +86,7 @@ export default function Project() {
               as="li"
               key={k}
               delay={k * 0.07}
-              className="border-t-2 pt-6 text-[clamp(1.1rem,1.5vw,1.3rem)] leading-relaxed"
+              className="border-t-[0.125rem] pt-6 text-[clamp(1.1rem,1.5vw,1.3rem)] leading-relaxed"
               style={{ borderColor: p.color }}
             >
               {pt}
@@ -95,9 +95,9 @@ export default function Project() {
         </ul>
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-4 pb-16 md:px-8">
+      <section className="mx-auto max-w-[87.5rem] px-4 pb-16 md:px-8">
         <Link to={`/work/${next.slug}`} className="group block border-t border-ink/15 pt-8">
-          <span className="text-[14px] text-muted">Next project</span>
+          <span className="text-[0.875rem] text-muted">Next project</span>
           <span className="display mt-4 flex items-center justify-between gap-6 text-[clamp(3rem,9vw,8rem)]">
             {next.name}
             <ArrowRight
@@ -117,7 +117,7 @@ function ExtLink({ href, children }) {
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className="link-underline inline-flex items-center gap-1">
       {children}
-      <ArrowUpRight size={14} aria-hidden />
+      <ArrowUpRight size="0.875rem" aria-hidden />
     </a>
   );
 }
@@ -129,7 +129,7 @@ function Shot({ src, alt }) {
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'center center'] });
   const scale = useTransform(scrollYProgress, [0, 1], [0.88, 1]);
   return (
-    <section ref={ref} className="mx-auto max-w-[1400px] px-4 md:px-8">
+    <section ref={ref} className="mx-auto max-w-[87.5rem] px-4 md:px-8">
       <motion.img
         src={src}
         alt={alt}

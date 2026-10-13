@@ -1,6 +1,6 @@
 {
   "about_this_file": "Machine-readable master CV of Yash Vaibhav Awasthi, served for bots and automated tools. Same content as the site and the resume PDF. Contact by email.",
-  "updated": "2026-10-03",
+  "updated": "2026-10-14",
   "person": {
     "name": "Yash Vaibhav Awasthi",
     "headline": "Software engineer building backends, AI systems and mobile apps that keep working when things fail.",
@@ -139,7 +139,10 @@
       "Binutils",
       "RISC-V ISA extension",
       "H.264 / NVENC",
-      "PTY"
+      "PTY",
+      "Lock-free SPSC rings",
+      "SIMD (AVX2)",
+      "SystemVerilog / Verilator"
     ],
     "Statistics & Research": [
       "SEM",
@@ -147,6 +150,7 @@
       "MICOM",
       "Monte Carlo simulation",
       "backtesting",
+      "market microstructure",
       "lavaan",
       "NumPy",
       "SciPy",
@@ -421,6 +425,41 @@
         {
           "label": "GitHub",
           "url": "https://github.com/Yash-Awasthi/Key-Router"
+        }
+      ]
+    },
+    {
+      "name": "Microbook",
+      "tagline": "Low-Latency Trading System in C++23",
+      "period": "Oct 2026",
+      "stack": [
+        "Nasdaq TotalView-ITCH 5.0",
+        "Lock-free SPSC rings",
+        "AVX2 SIMD",
+        "SystemVerilog",
+        "C++23",
+        "Verilator",
+        "OpenSSL",
+        "zstd / LZ4",
+        "CMake",
+        "Docker"
+      ],
+      "highlights": [
+        "Rebuilds every Nasdaq order book of a trading day, 847M messages, in 7.0 s; one book update takes 41 ns at p50.",
+        "Reads live Polymarket books with its own TLS WebSocket client and AVX2 JSON parser, about 9 µs wire to decision.",
+        "Trades on paper through pre-trade risk, an order manager and a simulated venue: 177 ns from intent to venue request.",
+        "Replays any session bit for bit, checked by hash; 340 tests also run under ASan, UBSan and TSan, with five fuzzers.",
+        "Scores microstructure research out of sample: order flow imbalance explains 55–66% of 10 s price changes.",
+        "Reports the obvious arbitrage as measured: -67.45 USD over 61 attempts after fees and latency."
+      ],
+      "links": [
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Yash-Awasthi/hft"
+        },
+        {
+          "label": "Sample reports",
+          "url": "https://yash-awasthi.github.io/hft/"
         }
       ]
     }

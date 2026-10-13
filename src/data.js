@@ -172,6 +172,26 @@ export const PROJECTS = [
       'Guards the admin page with a constant-time password check and deploys on the free plan in one command.',
     ],
   },
+  {
+    slug: 'microbook',
+    name: 'Microbook',
+    line: 'Low-latency trading system in C++23',
+    year: '2026',
+    stack: ['Nasdaq ITCH 5.0', 'Lock-free SPSC rings', 'AVX2 SIMD', 'SystemVerilog', 'C++23', 'Verilator', 'OpenSSL', 'zstd / LZ4', 'CMake', 'Docker'],
+    github: 'https://github.com/Yash-Awasthi/hft',
+    live: 'https://yash-awasthi.github.io/hft/',
+    shape: 'book',
+    color: '#2a8a64',
+    tint: '#dcede4',
+    overview:
+      "Microbook is a market-data and trading system in C++23 with no framework underneath. It replays full Nasdaq days through an order-by-order book and a matching engine, reads Polymarket's live order books, and trades both on paper only. Its research is scored out of sample: order flow imbalance explains 55-66% of 10 s price changes, and the obvious arbitrage loses money after fees, reported as measured.",
+    points: [
+      'Rebuilds every Nasdaq order book of a trading day, 847M messages, in 7.0 s; one book update takes 41 ns at p50.',
+      'Reads live Polymarket books with its own TLS WebSocket client and AVX2 JSON parser, about 9 µs wire to decision.',
+      'Trades on paper through pre-trade risk, an order manager and a simulated venue: 177 ns from intent to venue request.',
+      'Replays any session bit for bit, checked by hash; 340 tests also run under ASan, UBSan and TSan, with five fuzzers.',
+    ],
+  },
 ];
 
 export const JOURNEY = [
