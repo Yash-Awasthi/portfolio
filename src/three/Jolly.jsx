@@ -421,18 +421,19 @@ export function Jolly({ calm }) {
   const model = useMemo(() => build(source, animations, Array.from({ length: SHELLS + 1 }, (_, i) => furMaterial(i / SHELLS))), [source, animations]);
   const live = useRef(null);
   const gl = useThree((st) => st.gl);
-  const camera = useThree((st) => st.camera);
+  const get = useThree((st) => st.get);
   const stage = useThree((st) => st.scene);
   const clock = useThree((st) => st.clock);
   const [ready, setReady] = useState(false);
-  // compile off the main thread first; a synchronous first draw froze the page for ~2s
+  // compile off the main thread (a synchronous first draw froze the page ~2s), and once: the View swaps
+  // its camera in after mount, and a restart queued Jolly behind every other object on the page
   useEffect(() => {
     let on = true;
-    compileLit(gl, model.scene, camera, stage).then(() => on && setReady(true));
+    compileLit(gl, model.scene, get().camera, stage).then(() => on && setReady(true));
     return () => {
       on = false;
     };
-  }, [gl, camera, stage, model]);
+  }, [gl, get, stage, model]);
   const mind = useRef({ nx: 0, ny: 0, touch: null, lastMove: 0, clicks: 0, clickAt: null, moved: false, clicked: false, tx: 100, press: null, grab: null, dragged: false, turning: 0, touchUntil: 0, ndc: new THREE.Vector2(), cur: null, blinkAt: 2, t0: null, view: 1, wave: [], hold: null, live: new Set(), fade: 0.3 });
   useLayoutEffect(() => {
     live.current = model;

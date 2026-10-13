@@ -28,14 +28,14 @@ Each work row is a stop in its project's tint; the journey has one stop per mile
 | Project | Accent | Tint |
 | --- | --- | --- |
 | Nexus | `#3d5bd9` | `#e1e7f6` |
-| WorldFin | `#2a8f8a` | `#dcecea` |
+| FinScrape | `#2a8f8a` | `#dcecea` |
 | AdapFit | `#4a7fc1` | `#e0e9f3` |
 | PocketDesk | `#5b5fc7` | `#e4e5f5` |
-| Case Files | `#3f7f9f` | `#deeaef` |
+| CaseFiles | `#3f7f9f` | `#deeaef` |
 | Ping | `#6a78d1` | `#e5e8f6` |
-| RISC-V attn | `#237a94` | `#d9eaee` |
-| Key Router | `#3367a8` | `#dfe6f1` |
-| Microbook | `#2a8a64` | `#dcede4` |
+| RISC-VInjection | `#237a94` | `#d9eaee` |
+| KeyRouter | `#3367a8` | `#dfe6f1` |
+| LobIQ | `#2a8a64` | `#dcede4` |
 
 Accents in small text are mixed 72% toward ink (`ink()` in `src/lib/tint.js`) to keep contrast.
 
@@ -98,14 +98,14 @@ loop at one chosen moment.
 | --- | --- | --- |
 | Hero | Liquid chrome form, three orbiting spheres | Surface ripples, spheres orbit, tilts to the pointer |
 | Nexus | Round table, five differently shaped models | A question drops in and splits to every seat; each writes a card; cards turn face down and pass one seat on; debate beads cross the table; cards gather into a verdict gem |
-| WorldFin | Clay globe dotted with events, chrome ring | Ring swings into orbit; event pillars rise and settle as the globe turns |
+| FinScrape | Clay globe dotted with events, chrome ring | Ring swings into orbit; event pillars rise and settle as the globe turns |
 | AdapFit | HRV trace, recovery gauge, four decision pills | The trace runs into the gauge, the needle settles on that morning's score and its decision lifts; four mornings, one per decision |
 | PocketDesk | Laptop, phone, QUIC relay | Commands go through the relay to the terminal, which types; a diff card comes back and is approved; desktop frames stream to the phone, whose screen becomes the desktop |
-| Case Files | Three case files with their own seals, magnifier | An answer slip leaves one file for another; the magnifier reads its seal and a thread runs back to the file it came from |
+| CaseFiles | Three case files with their own seals, magnifier | An answer slip leaves one file for another; the magnifier reads its seal and a thread runs back to the file it came from |
 | Ping | Two phones, a hand above each | Both hands close into the same V and lock; the six-digit check lights on both screens; the phones turn and the card crosses |
-| RISC-V attn | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
-| Key Router | Cloud with a TTL dial, chrome key, accent key | The real key slides into the cloud and stays; the gateway key turns out of the other side; requests arc over the cloud and change colour at the swap; replies stream back underneath; the dial drains and the key turns edge-on and retracts |
-| Microbook | Order-by-order book on a dark engine plate, feed rail with a ring, playhead, two-row hash tablet | Messages run through the ring onto the queues as adds and cancels; the bids build and the micro-price leans to the ask; a buyer eats the best ask's queue and the paper order fills; the run's hash lights; the playhead rewinds, the session replays faster and the second hash comes out the same |
+| RISC-VInjection | Chip with traces | Signals run in along traces, the die lifts, turns and seats |
+| KeyRouter | Cloud with a TTL dial, chrome key, accent key | The real key slides into the cloud and stays; the gateway key turns out of the other side; requests arc over the cloud and change colour at the swap; replies stream back underneath; the dial drains and the key turns edge-on and retracts |
+| LobIQ | Order-by-order book on a dark engine plate, feed rail with a ring, playhead, two-row hash tablet | Messages run through the ring onto the queues as adds and cancels; the bids build and the micro-price leans to the ask; a buyer eats the best ask's queue and the paper order fills; the run's hash lights; the playhead rewinds, the session replays faster and the second hash comes out the same |
 
 On the home page, switching projects is a turntable: the current object turns edge-on and the
 next turns in from the other side, replaying its entrance, all inside the frame.

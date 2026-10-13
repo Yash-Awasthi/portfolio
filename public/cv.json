@@ -244,7 +244,7 @@
       ]
     },
     {
-      "name": "WorldFin",
+      "name": "FinScrape",
       "tagline": "Geopolitical Market Advisory",
       "period": "Feb 2026 – Mar 2026",
       "stack": [
@@ -266,7 +266,7 @@
       "links": [
         {
           "label": "GitHub",
-          "url": "https://github.com/Yash-Awasthi/fin-scrape"
+          "url": "https://github.com/Yash-Awasthi/FinScrape"
         },
         {
           "label": "Live",
@@ -324,12 +324,12 @@
       "links": [
         {
           "label": "GitHub",
-          "url": "https://github.com/Yash-Awasthi/adapfit"
+          "url": "https://github.com/Yash-Awasthi/AdapFit"
         }
       ]
     },
     {
-      "name": "Case Files",
+      "name": "CaseFiles",
       "tagline": "Per-Player Personalised CTF Platform",
       "period": "Jun 2025 – Aug 2025",
       "stack": [
@@ -351,7 +351,7 @@
       "links": [
         {
           "label": "GitHub",
-          "url": "https://github.com/Yash-Awasthi/CTF"
+          "url": "https://github.com/Yash-Awasthi/CaseFiles"
         }
       ]
     },
@@ -380,7 +380,7 @@
       ]
     },
     {
-      "name": "RISC-V Compiler Extension",
+      "name": "RISC-VInjection",
       "tagline": "Custom attn Instruction",
       "period": "Mar 2026 – May 2026",
       "stack": [
@@ -400,12 +400,12 @@
       "links": [
         {
           "label": "GitHub",
-          "url": "https://github.com/Yash-Awasthi/RISC-V_Injection"
+          "url": "https://github.com/Yash-Awasthi/RISC-VInjection"
         }
       ]
     },
     {
-      "name": "Key Router",
+      "name": "KeyRouter",
       "tagline": "Expiring Gateway Keys for LLM Providers",
       "period": "Oct 2026",
       "stack": [
@@ -424,12 +424,12 @@
       "links": [
         {
           "label": "GitHub",
-          "url": "https://github.com/Yash-Awasthi/Key-Router"
+          "url": "https://github.com/Yash-Awasthi/KeyRouter"
         }
       ]
     },
     {
-      "name": "Microbook",
+      "name": "LobIQ",
       "tagline": "Low-Latency Trading System in C++23",
       "period": "Oct 2026",
       "stack": [
@@ -448,18 +448,18 @@
         "Rebuilds every Nasdaq order book of a trading day, 847M messages, in 7.0 s; one book update takes 41 ns at p50.",
         "Reads live Polymarket books with its own TLS WebSocket client and AVX2 JSON parser, about 9 µs wire to decision.",
         "Trades on paper through pre-trade risk, an order manager and a simulated venue: 177 ns from intent to venue request.",
-        "Replays any session bit for bit, checked by hash; 340 tests also run under ASan, UBSan and TSan, with five fuzzers.",
+        "Replays any session bit for bit, checked by hash; 348 tests also run under ASan, UBSan and TSan, with five fuzzers.",
         "Scores microstructure research out of sample: order flow imbalance explains 55–66% of 10 s price changes.",
         "Reports the obvious arbitrage as measured: -67.45 USD over 61 attempts after fees and latency."
       ],
       "links": [
         {
           "label": "GitHub",
-          "url": "https://github.com/Yash-Awasthi/hft"
+          "url": "https://github.com/Yash-Awasthi/LobIQ"
         },
         {
           "label": "Sample reports",
-          "url": "https://yash-awasthi.github.io/hft/"
+          "url": "https://yash-awasthi.github.io/LobIQ/"
         }
       ]
     }

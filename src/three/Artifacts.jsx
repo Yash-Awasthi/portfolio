@@ -221,7 +221,7 @@ function Council({ still, color, delay }) {
   );
 }
 
-// WorldFin: the globe turns while events land on it as pillars that rise and settle back.
+// FinScrape: the globe turns while events land on it as pillars that rise and settle back.
 const UP = new THREE.Vector3(0, 1, 0);
 const EVENTS = [
   [0.4, 0.6, 0.7],
@@ -619,7 +619,7 @@ function Desk({ still, color, delay }) {
   );
 }
 
-// Case Files: every player's case file carries its own seal, derived from their seed. An answer
+// CaseFiles: every player's case file carries its own seal, derived from their seed. An answer
 // slips out of one file into another; the magnifier reads the slip's seal and a thread runs back
 // to the file it came from.
 const FOLDER_X = [-0.95, 0, 0.95];
@@ -872,7 +872,7 @@ function trace(i, d) {
   return [-d, o];
 }
 
-// RISC-V attn: signals run in along the pins, the die lifts and turns as the instruction executes,
+// RISC-VInjection: signals run in along the pins, the die lifts and turns as the instruction executes,
 // then seats back into the package.
 function Chip({ still, color, delay }) {
   const clock = useClock(delay);
@@ -962,7 +962,7 @@ function KeyBody({ mat }) {
   );
 }
 
-// Key Router: the edge is a cloud. The real provider key slides into it and stays; a disposable
+// KeyRouter: the edge is a cloud. The real provider key slides into it and stays; a disposable
 // gateway key turns out of the other side. Requests arc over the cloud and change colour as the
 // real key is swapped in, replies stream back underneath, the TTL dial on the cloud drains, and
 // the expired key turns edge-on and retracts.
@@ -1109,7 +1109,7 @@ function KeyGate({ still, color, delay }) {
   );
 }
 
-// Microbook: messages run through the ring onto an order-by-order book; a buyer eats the best ask's queue,
+// LobIQ: messages run through the ring onto an order-by-order book; a buyer eats the best ask's queue,
 // paper order included, and the session rewinds and replays faster to the same hash.
 const LV = 5;
 const levelX = (l) => (l < LV ? -1 : 1) * (0.32 + (l % LV) * 0.27);
