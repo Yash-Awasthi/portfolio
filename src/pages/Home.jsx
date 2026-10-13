@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Link, useLocation } from 'react-router';
 import { motion, useReducedMotion, useScroll, useSpring, useTransform, useMotionValueEvent, AnimatePresence } from 'motion/react';
 import { ArrowUpRight, ArrowRight, ArrowUp, Copy, Check } from '@phosphor-icons/react';
@@ -219,9 +219,19 @@ function Band() {
   );
 }
 
+// A hidden View still compiles and draws every frame at 0x0, so each layout mounts only its own 3D.
+const WIDE = '(min-width: 48rem)';
+const onWide = (cb) => {
+  const q = window.matchMedia(WIDE);
+  q.addEventListener('change', cb);
+  return () => q.removeEventListener('change', cb);
+};
+const useWide = () => useSyncExternalStore(onWide, () => window.matchMedia(WIDE).matches);
+
 function Work() {
   const [active, activate] = useState(0);
   const p = PROJECTS[active];
+  const wide = useWide();
   const reduce = useReducedMotion();
   const box = useRef();
   const list = useRef();
@@ -253,9 +263,11 @@ function Work() {
       <div className="grid gap-10 md:grid-cols-12">
         <div ref={box} className="sticky top-24 hidden h-[min(72vh,40rem)] md:col-span-5 md:block">
           <motion.div style={{ y: lift }} className="h-full w-full">
-            <Scene className="h-full w-full" radius={1.55}>
-              <SwapArtifact shape={p.shape} color={p.color} />
-            </Scene>
+            {wide && (
+              <Scene className="h-full w-full" radius={1.55}>
+                <SwapArtifact shape={p.shape} color={p.color} />
+              </Scene>
+            )}
           </motion.div>
         </div>
         <ol ref={list} className="md:col-span-7">
@@ -275,9 +287,11 @@ function Work() {
                   onFocus={() => activate(i)}
                   className="group relative grid grid-cols-[1fr_auto] items-start gap-x-6 gap-y-3 py-8 md:py-10"
                 >
-                  <Scene className="col-span-2 -mx-4 h-60 md:hidden" radius={1.65}>
-                    <Artifact shape={item.shape} color={item.color} />
-                  </Scene>
+                  {!wide && (
+                    <Scene className="col-span-2 -mx-4 h-60 md:hidden" radius={1.65}>
+                      <Artifact shape={item.shape} color={item.color} />
+                    </Scene>
+                  )}
                   <h3
                     className={`display text-[clamp(2.2rem,4.6vw,4.4rem)] transition-colors duration-500 ${
                       on ? 'text-ink' : 'text-ink/30'
